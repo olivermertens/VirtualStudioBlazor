@@ -1,0 +1,64 @@
+@page "/camera"
+@using Microsoft.AspNetCore.SignalR.Client
+@using VirtualStudio.Shared
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+@implements IVirtualStudioClient
+
+<h1>Camera</h1>
+
+<p>Connection state: @connectionState</p>
+<p>Last message: @lastMessage</p>
+
+<button class="btn btn-primary" @onclick="RegisterStudioClient">Register studio client</button>
+
+@code {
+    private HubConnection hubConnection;
+    private string connectionState = "Disconnected";
+    private string lastMessage = "";
+    private SimpleCameraInfo studioClient;
+
+    protected override async Task OnInitializedAsync()
+    {
+        studioClient = new SimpleCameraInfo() {Identifier = "testclient"};
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/virtualstudio"))
+            .Build();
+
+        hubConnection.On<string>("ReceiveMessage", ReceiveMessage);
+
+        await hubConnection.StartAsync();
+        connectionState = hubConnection.State.ToString();
+    }
+
+    private async Task RegisterStudioClient()
+    {
+        await hubConnection.SendAsync("RegisterStudioClient", studioClient);
+    }
+
+    public void ReceiveMessage(string message)
+    {
+        lastMessage = "message";
+    }
+
+    public bool InitWebRtcConnection(int linkId, EndpointDescription sendingEndpoint)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public string GetSdpAnswer(string sdpOffer, EndpointDescription receivingEndpoint)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public Task DisconnectLink(int linkId)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await hubConnection.DisposeAsync();
+    }
+}
