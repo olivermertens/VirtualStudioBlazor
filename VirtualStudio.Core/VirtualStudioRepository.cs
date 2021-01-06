@@ -6,17 +6,22 @@ using System.Linq;
 using System.Threading.Tasks;
 using VirtualStudio.Core;
 using VirtualStudio.Core.Abstractions;
+using VirtualStudio.Core.Arrangement;
+using VirtualStudio.Core.Operations;
 
 namespace VirtualStudio.Core
 {
-    public class VirtualStudioManager
+    /// <summary>
+    /// Manages multiple instances of VirtualStudio.
+    /// </summary>
+    public class VirtualStudioRepository
     {
         public int Count => virtualStudios.Count;
 
-        Dictionary<string, VirtualStudio> virtualStudios;
+        Dictionary<string, VirtualStudio> virtualStudios = new Dictionary<string, VirtualStudio>();
         ILoggerFactory loggerFactory;
 
-        public VirtualStudioManager(ILoggerFactory loggerFactory)
+        public VirtualStudioRepository(ILoggerFactory loggerFactory = null)
         {
             this.loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         }
@@ -34,17 +39,10 @@ namespace VirtualStudio.Core
             }
             else
             {
-                VirtualStudio virtualStudio = new VirtualStudio(null, loggerFactory.CreateLogger<VirtualStudio>());
+                var virtualStudio = new VirtualStudioArrangement(logger: loggerFactory.CreateLogger<VirtualStudio>());
                 virtualStudios.Add(name, virtualStudio);
                 return virtualStudio;
             }
-        }
-
-        public VirtualStudio AddComponent(string virtualStudioId, StudioComponentBase studioComponent)
-        {
-            var virtualStudio = GetVirtualStudio(virtualStudioId);
-            virtualStudio?.AddComponent(studioComponent);
-            return virtualStudio;
         }
     }
 }

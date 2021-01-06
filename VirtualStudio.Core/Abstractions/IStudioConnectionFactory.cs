@@ -6,6 +6,7 @@ namespace VirtualStudio.Core.Abstractions
 {
     public interface IStudioConnectionFactory
     {
-        IStudioConnection CreateConnection(IStudioOutput output, IStudioInput input);
+        string Name { get; }
+        StudioConnection CreateStudioConnection(StudioComponentOutput output, StudioComponentInput input);
     }
 }

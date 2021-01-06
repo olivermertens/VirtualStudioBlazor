@@ -9,87 +9,77 @@ namespace VirtualStudio.Core
 {
     public class VirtualStudio
     {
-        private List<StudioComponentBase> _components;
-        public IReadOnlyCollection<StudioComponentBase> Components { get; }
-        private List<IStudioConnection> _connections;
-        public IReadOnlyCollection<IStudioConnection> Connections { get; }
+        public virtual event EventHandler<StudioComponent> ComponentAdded;
+        public virtual event EventHandler<StudioComponent> ComponentRemoved;
+        public virtual event EventHandler<StudioConnection> ConnectionAdded;
+        public virtual event EventHandler<StudioConnection> ConnectionRemoved;
+
+        protected List<StudioComponent> _components;
+        public IReadOnlyCollection<StudioComponent> Components { get; }
+        protected List<StudioConnection> _connections;
+        public IReadOnlyCollection<StudioConnection> Connections { get; }
+        public StudioComponentRepository ComponentRepository { get; }
 
         private IStudioConnectionFactory connectionFactory;
-        private ILogger logger;
+        protected ILogger logger;
 
-        public VirtualStudio(IStudioConnectionFactory connectionFactory, ILogger logger = null)
+
+        public VirtualStudio() : this(null, null) { }
+
+        public VirtualStudio(IStudioConnectionFactory connectionFactory = null, ILogger logger = null)
         {
             this.logger = logger ?? NullLogger.Instance;
-            this.connectionFactory = connectionFactory;
-            _components = new List<StudioComponentBase>();
+            this.connectionFactory = connectionFactory ?? new StudioConnectionFactory();
+            _components = new List<StudioComponent>();
             Components = _components.AsReadOnly();
-            _connections = new List<IStudioConnection>();
+            _connections = new List<StudioConnection>();
             Connections = _connections.AsReadOnly();
+            ComponentRepository = new StudioComponentRepository();
         }
 
-        public void AddComponent(StudioComponentBase component)
+        public virtual void AddComponent(StudioComponent component)
         {
             if (_components.Contains(component))
             {
                 return;
             }
             _components.Add(component);
-            component.EndpointRemoved += Component_EndpointRemoved;
+            component.InputRemoved += Component_EndpointRemoved;
+            component.OutputRemoved += Component_EndpointRemoved;
+            ComponentAdded?.Invoke(this, component);
         }
 
-        public void RemoveComponent(StudioComponentBase component)
+        public virtual void RemoveComponent(StudioComponent component)
         {
             if (_components.Remove(component))
             {
-                component.EndpointRemoved -= Component_EndpointRemoved;
-                var foundConnections = new List<IStudioConnection>();
-                foreach (var input in component.Inputs)
+                component.InputRemoved -= Component_EndpointRemoved;
+                component.OutputRemoved -= Component_EndpointRemoved;
+                var foundConnections = new List<StudioConnection>();
+                if (component.Inputs != null)
                 {
-                    _connections.RemoveAll(c => c.Input == input);
+                    foreach (var input in component.Inputs)
+                    {
+                        _connections.RemoveAll(c => c.Input == input);
+                    }
                 }
-                foreach (var output in component.Outputs)
+                if (component.Outputs != null)
                 {
-                    _connections.RemoveAll(c => c.Output == output);
+                    foreach (var output in component.Outputs)
+                    {
+                        _connections.RemoveAll(c => c.Output == output);
+                    }
                 }
+                ComponentRemoved?.Invoke(this, component);
             }
         }
 
-        public IStudioConnection CreateConnection(IStudioOutput output, IStudioInput input)
+        public bool CanCreateConnection(StudioComponentOutput output, StudioComponentInput input)
         {
             if (IsInputInComponents(input) && IsOutputInComponents(output))
             {
-                var connection = connectionFactory.CreateConnection(output, input);
-                _connections.Add(connection);
-                return connection;
-            }
-            else
-            {
-                throw new InvalidOperationException();
-            }
-        }
-
-        public void RemoveConnection(IStudioConnection connection)
-        {
-            _connections.Remove(connection);
-        }
-
-        private void Component_EndpointRemoved(object sender, IStudioEndpoint endPoint)
-        {
-            if (endPoint is IStudioInput)
-            {
-                _connections.RemoveAll(c => c.Input == endPoint);
-            }
-            if (endPoint is IStudioOutput)
-            {
-                _connections.RemoveAll(c => c.Output == endPoint);
-            }
-        }
-
-        private bool IsInputInComponents(IStudioInput input)
-        {
-            foreach (var component in _components)
-            {
-                if (component.Inputs.FirstOrDefault(c => c == input) != null)
+                var connection = connectionFactory.CreateStudioConnection(output, input);
+                if (connection != null)
                 {
                     return true;
                 }
@@ -97,11 +87,64 @@ namespace VirtualStudio.Core
             return false;
         }
 
-        private bool IsOutputInComponents(IStudioOutput output)
+        public StudioConnection CreateConnection(StudioComponentOutput output, StudioComponentInput input)
+        {
+            if (IsInputInComponents(input) && IsOutputInComponents(output))
+            {
+                var connection = connectionFactory.CreateStudioConnection(output, input);
+                if (connection != null)
+                {
+                    _connections.Add(connection);
+                    ConnectionAdded?.Invoke(this, connection);
+                    return connection;
+                }
+            }
+            throw new InvalidOperationException();
+        }
+
+        public void RemoveConnection(StudioConnection connection)
+        {
+            if (_connections.Remove(connection))
+            {
+                ConnectionRemoved?.Invoke(this, connection);
+            }
+        }
+
+        private void Component_EndpointRemoved(object sender, IStudioComponentEndpoint endPoint)
+        {
+            if (endPoint is StudioComponentInput)
+            {
+                foreach (var con in _connections.FindAll(c => c.Input == endPoint))
+                {
+                    RemoveConnection(con);
+                }
+            }
+            if (endPoint is StudioComponentOutput)
+            {
+                foreach (var con in _connections.FindAll(c => c.Output == endPoint))
+                {
+                    RemoveConnection(con);
+                }
+            }
+        }
+
+        private bool IsInputInComponents(StudioComponentInput input)
         {
             foreach (var component in _components)
             {
-                if (component.Outputs.FirstOrDefault(c => c == output) != null)
+                if (component.Inputs?.FirstOrDefault(c => c == input) != null)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool IsOutputInComponents(StudioComponentOutput output)
+        {
+            foreach (var component in _components)
+            {
+                if (component.Outputs?.FirstOrDefault(c => c == output) != null)
                 {
                     return true;
                 }

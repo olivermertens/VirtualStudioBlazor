@@ -11,18 +11,5 @@ namespace VirtualStudio.Server
         {
 
         }
-
-        public IEnumerable<int> GetVirtualStudioIds()
-        {
-            yield return 1;
-        }
-
-        public VirtualStudioDto GetVirtualStudio(int id)
-        {
-            if(id == 1)
-            {
-
-            }
-        }
     }
 }
