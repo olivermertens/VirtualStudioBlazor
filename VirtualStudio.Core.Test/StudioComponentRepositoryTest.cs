@@ -38,16 +38,15 @@ namespace VirtualStudio.Core.Test
         {    
             var studioComponentRepository = new StudioComponentRepository();
             var placeholder = new PlaceholderStudioComponent();
-            var placeholder2 = new Mock<PlaceholderStudioComponent>();
-            placeholder2.SetupGet(p => p.Id).Returns(1);
+            var placeholder2 = new PlaceholderStudioComponent();
+            placeholder2.SetId(1);
 
             studioComponentRepository.AddPlaceholder(placeholder);
 
             Assert.ThrowsException<ArgumentException>(() =>
             {
-                studioComponentRepository.AddPlaceholder(placeholder2.Object);
+                studioComponentRepository.AddPlaceholder(placeholder2);
             });
-            placeholder2.VerifyGet(p => p.Id);
         }
     }
 }

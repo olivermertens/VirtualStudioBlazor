@@ -32,8 +32,7 @@ namespace VirtualStudio.Core.Operations
             }
             if(component is PlaceholderStudioComponent placeholderComponent)
             {
-                var input = new StudioComponentInput(endpoint.Name, endpoint.DataKind, endpoint.ConnectionType);
-                placeholderComponent.AddInput(input);
+                placeholderComponent.AddInput(endpoint.Name, endpoint.DataKind, endpoint.ConnectionType);
                 return true;
             }
             else

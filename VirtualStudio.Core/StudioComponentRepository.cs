@@ -7,37 +7,39 @@ namespace VirtualStudio.Core
 {
     public class StudioComponentRepository
     {
-        int idCounter = 1;
-        protected int GetNewId() => idCounter++;
+        IdGenerator idGenerator = new IdGenerator();
 
-        public event EventHandler<StudioComponent> ClientAdded;
-        public event EventHandler<StudioComponent> ClientRemoved;
-        public event EventHandler<StudioComponent> PlaceholderAdded;
-        public event EventHandler<StudioComponent> PlaceholderRemoved;
+        public event EventHandler<IStudioComponent> ClientAdded;
+        public event EventHandler<IStudioComponent> ClientRemoved;
+        public event EventHandler<PlaceholderStudioComponent> PlaceholderAdded;
+        public event EventHandler<PlaceholderStudioComponent> PlaceholderRemoved;
 
         protected List<PlaceholderStudioComponent> _placeholders;
         public IReadOnlyCollection<PlaceholderStudioComponent> Placeholders { get; }
-        protected List<StudioComponent> _clients;
-        public IReadOnlyCollection<StudioComponent> Clients { get; }
+        protected List<IStudioComponent> _clients;
+        public IReadOnlyCollection<IStudioComponent> Clients { get; }
 
-        public StudioComponentRepository(List<PlaceholderStudioComponent> placeholders = null)
+        public StudioComponentRepository()
         {
             _placeholders = new List<PlaceholderStudioComponent>();
-            if (placeholders != null)
-            {
-                foreach (var placeholder in placeholders)
-                {
-                    AddPlaceholder(placeholder);
-                }
-            }
             Placeholders = _placeholders.AsReadOnly();
-            _clients = new List<StudioComponent>();
+            _clients = new List<IStudioComponent>();
             Clients = _clients.AsReadOnly();
         }
 
-        public virtual bool AddClient(StudioComponent client)
+        public bool AddPlaceholder(PlaceholderStudioComponent placeholder)
         {
-            if (AddStudioComponent(client, true))
+            if(AddPlaceholderStudioComponent(placeholder))
+            {
+                PlaceholderAdded?.Invoke(this, placeholder);
+                return true;
+            }
+            return false;
+        }
+
+        public virtual bool AddClient(IStudioComponent client)
+        {
+            if (AddClientStudioComponent(client))
             {
                 ClientAdded?.Invoke(this, client);
                 return true;
@@ -45,22 +47,12 @@ namespace VirtualStudio.Core
             return false;
         }
 
-        public virtual void RemoveClient(StudioComponent client)
+        public virtual void RemoveClient(IStudioComponent client)
         {
             if (_clients.Remove(client))
             {
                 ClientRemoved?.Invoke(this, client);
             }
-        }
-
-        public virtual bool AddPlaceholder(PlaceholderStudioComponent placeholder)
-        {
-            if(AddStudioComponent(placeholder, false))
-            {
-                PlaceholderAdded?.Invoke(this, placeholder);
-                return true;
-            }
-            return false;
         }
 
         public virtual void RemovePlaceholder(PlaceholderStudioComponent placeholder)
@@ -71,28 +63,27 @@ namespace VirtualStudio.Core
             }
         }
 
-        public bool Contains(StudioComponent component)
+        public bool Contains(IStudioComponent component)
         {
-            return _clients.Contains(component) ||
-                   (component is PlaceholderStudioComponent psc && _placeholders.Contains(psc));
+            return _clients.Contains(component) || (component is PlaceholderStudioComponent psc && _placeholders.Contains(psc));
         }
 
-        public bool Exists(Predicate<StudioComponent> match)
+        public bool Exists(Predicate<IStudioComponent> match)
         {
             return _clients.Exists(match) || _placeholders.Exists(match);
         }
 
-        public StudioComponent Find(Predicate<StudioComponent> match)
+        public IStudioComponent Find(Predicate<IStudioComponent> match)
         {
             var found = _clients.Find(match);
-            if(found == null)
+            if (found == null)
             {
                 found = _placeholders.Find(match);
             }
             return found;
         }
 
-        protected virtual bool AddStudioComponent(StudioComponent component, bool isClient)
+        private bool PrepareAddComponent(IStudioComponent component)
         {
             if (Contains(component))
             {
@@ -102,31 +93,34 @@ namespace VirtualStudio.Core
             {
                 if (Exists(c => c.Id == component.Id))
                 {
-                    throw new ArgumentException("Cannot add a client with an already existing ID.");
+                    throw new ArgumentException("Cannot add a placeholder component with an already existing ID.");
                 }
             }
             else
             {
                 do
                 {
-                    component.Id = GetNewId();
+                    component.SetId(idGenerator.GetNewId());
                 } while (Exists(c => c.Id == component.Id));
             }
-            if (isClient)
-            {
-                _clients.Add(component);
-            }
-            else
-            {
-                if (component is PlaceholderStudioComponent psc)
-                {
-                    _placeholders.Add(psc);
-                }
-                else
-                {
-                    throw new ArgumentException("Component cannot be added as placeholder.");
-                }
-            }
+            return true;
+        }
+
+        protected virtual bool AddPlaceholderStudioComponent(PlaceholderStudioComponent component)
+        {
+            if (!PrepareAddComponent(component))
+                return false;
+
+            _placeholders.Add(component);
+            return true;
+        }
+
+        protected virtual bool AddClientStudioComponent(IStudioComponent component)
+        {
+            if (!PrepareAddComponent(component))
+                return false;
+
+            _clients.Add(component);
             return true;
         }
     }

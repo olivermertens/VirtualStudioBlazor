@@ -6,6 +6,6 @@ namespace VirtualStudio.Core
 {
     public enum ConnectionState
     {
-        Unknown, Disconnected, Disconnecting, Connecting, Connected 
+        Unknown, Disconnected, Disconnecting, Connecting, Connected, Destroyed
     }
 }

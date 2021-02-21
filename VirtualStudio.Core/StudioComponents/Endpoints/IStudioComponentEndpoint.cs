@@ -7,8 +7,9 @@ namespace VirtualStudio.Core
 {
     public interface IStudioComponentEndpoint
     {
+        event EventHandler<(IStudioConnection connection, ConnectionState state)> ConnectionStateUpdated;
         int Id { get; }
-        StudioComponent Component { get; }
+        IStudioComponent Component { get; }
         string Name { get; set; }
         EndpointIOType IOType { get; }
         DataKind DataKind { get; }

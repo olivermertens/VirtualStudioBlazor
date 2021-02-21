@@ -14,19 +14,19 @@ namespace VirtualStudio.Core.Arrangement
         private List<ComponentNode> _componentNodes;
         public IReadOnlyCollection<ComponentNode> ComponentNodes { get; }
 
-        public VirtualStudioArrangement(IStudioConnectionFactory connectionFactory = null, ILogger logger = null)
-            : base(connectionFactory, logger)
+        public VirtualStudioArrangement(ILogger logger = null)
+            : base(logger)
         {
             _componentNodes = new List<ComponentNode>();
             ComponentNodes = _componentNodes.AsReadOnly();
         }
 
-        public override void AddComponent(StudioComponent component)
+        public override void AddComponent(IStudioComponent component)
         {
             AddComponent(component, Position2D.Zero);
         }
 
-        public void AddComponent(StudioComponent component, Position2D targetPosition)
+        public void AddComponent(IStudioComponent component, Position2D targetPosition)
         {
             if (!_components.Contains(component))
             {
@@ -35,7 +35,7 @@ namespace VirtualStudio.Core.Arrangement
             }
         }
 
-        public override void RemoveComponent(StudioComponent component)
+        public override void RemoveComponent(IStudioComponent component)
         {
             if (_components.Contains(component))
             {

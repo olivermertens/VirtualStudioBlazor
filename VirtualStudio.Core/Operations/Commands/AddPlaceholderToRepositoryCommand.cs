@@ -26,11 +26,11 @@ namespace VirtualStudio.Core.Operations.Commands
 
             foreach(var input in component.Inputs)
             {
-                placeholder.AddInput(new StudioComponentInput(input.Name, input.DataKind, input.ConnectionType));
+                placeholder.AddInput(input.Name, input.DataKind, input.ConnectionType);
             }
             foreach (var output in component.Outputs)
             {
-                placeholder.AddOutput(new StudioComponentOutput(output.Name, output.DataKind, output.ConnectionType));
+                placeholder.AddOutput(output.Name, output.DataKind, output.ConnectionType);
             }
 
             return virtualStudio.ComponentRepository.AddPlaceholder(placeholder);

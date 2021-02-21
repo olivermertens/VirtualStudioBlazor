@@ -7,15 +7,6 @@ namespace VirtualStudio.Core.Test
     [TestClass]
     public class VirtualStudioTest
     {
-        static StudioConnectionFactory studioConnectionFactory;
-
-        [ClassInitialize]
-        public static void Init(TestContext context)
-        {
-            studioConnectionFactory = new StudioConnectionFactory();
-            studioConnectionFactory.RegisterStudioConnectionType(new PlaceholderStudioConnectionFactory());
-        }
-
         [TestMethod]
         public void Adds_component()
         {
@@ -52,32 +43,17 @@ namespace VirtualStudio.Core.Test
         }
 
         [TestMethod]
-        public void Throws_exception_if_input_or_output_for_a_connection_does_not_exist_in_components()
-        {
-            var virtualStudio = new VirtualStudio();
-            var input = new StudioComponentInput("input", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            var output = new StudioComponentOutput("output", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-
-            Assert.ThrowsException<System.InvalidOperationException>(() =>
-            {
-                StudioConnection connection = virtualStudio.CreateConnection(output, input);
-            });
-        }
-
-        [TestMethod]
         public void Adds_connection_between_endpoints_that_exist_in_components()
         {
-            var virtualStudio = new VirtualStudio(studioConnectionFactory);
+            var virtualStudio = new VirtualStudio();
             var component = new PlaceholderStudioComponent();
-            var input = new StudioComponentInput("input", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            component.AddInput(input);
-            var output = new StudioComponentOutput("output", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            component.AddOutput(output);
+            var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
+            var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
             virtualStudio.AddComponent(component);
 
             Assert.IsTrue(virtualStudio.CanCreateConnection(output, input));
 
-            StudioConnection connection = virtualStudio.CreateConnection(output, input); 
+            IStudioConnection connection = virtualStudio.CreateConnection(output, input);
 
             Assert.IsNotNull(connection);
             Assert.IsTrue(virtualStudio.Connections.Count == 1);
@@ -86,14 +62,12 @@ namespace VirtualStudio.Core.Test
         [TestMethod]
         public void Removes_connection()
         {
-            var virtualStudio = new VirtualStudio(studioConnectionFactory);
+            var virtualStudio = new VirtualStudio();
             var component = new PlaceholderStudioComponent();
-            var input = new StudioComponentInput("input", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            component.AddInput(input);
-            var output = new StudioComponentOutput("output", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            component.AddOutput(output);
+            var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
+            var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
             virtualStudio.AddComponent(component);
-            StudioConnection connection = virtualStudio.CreateConnection(output, input);
+            IStudioConnection connection = virtualStudio.CreateConnection(output, input);
 
             virtualStudio.RemoveConnection(connection);
 
@@ -103,14 +77,12 @@ namespace VirtualStudio.Core.Test
         [TestMethod]
         public void Removes_connection_when_a_related_component_gets_removed()
         {
-            var virtualStudio = new VirtualStudio(studioConnectionFactory);
+            var virtualStudio = new VirtualStudio();
             var component = new PlaceholderStudioComponent();
-            var input = new StudioComponentInput("input", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            component.AddInput(input);
-            var output = new StudioComponentOutput("output", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            component.AddOutput(output);
+            var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
+            var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
             virtualStudio.AddComponent(component);
-            StudioConnection connection = virtualStudio.CreateConnection(output, input);
+            IStudioConnection connection = virtualStudio.CreateConnection(output, input);
 
             virtualStudio.RemoveComponent(component);
 
@@ -120,14 +92,12 @@ namespace VirtualStudio.Core.Test
         [TestMethod]
         public void Removes_connection_when_a_related_endpoint_gets_removed_from_the_component()
         {
-            var virtualStudio = new VirtualStudio(studioConnectionFactory);
+            var virtualStudio = new VirtualStudio();
             var component = new PlaceholderStudioComponent();
-            var input = new StudioComponentInput("input", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            component.AddInput(input);
-            var output = new StudioComponentOutput("output", DataKind.Audio, PlaceholderStudioConnectionFactory.Name);
-            component.AddOutput(output);
+            var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
+            var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
             virtualStudio.AddComponent(component);
-            StudioConnection connection = virtualStudio.CreateConnection(output, input);
+            IStudioConnection connection = virtualStudio.CreateConnection(output, input);
 
             component.RemoveOutput(output);
 

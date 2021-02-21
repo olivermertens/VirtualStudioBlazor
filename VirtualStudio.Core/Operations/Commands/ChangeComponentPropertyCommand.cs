@@ -39,7 +39,7 @@ namespace VirtualStudio.Core.Operations
             return ChangeProperty(component, propertyName, value);
         }
 
-        private bool ChangeProperty(StudioComponent component, string propertyName, object value)
+        private bool ChangeProperty(IStudioComponent component, string propertyName, object value)
         {
             switch (propertyName)
             {

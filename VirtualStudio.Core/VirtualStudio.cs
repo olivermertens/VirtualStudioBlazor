@@ -9,35 +9,35 @@ namespace VirtualStudio.Core
 {
     public class VirtualStudio
     {
-        public virtual event EventHandler<StudioComponent> ComponentAdded;
-        public virtual event EventHandler<StudioComponent> ComponentRemoved;
-        public virtual event EventHandler<StudioConnection> ConnectionAdded;
-        public virtual event EventHandler<StudioConnection> ConnectionRemoved;
+        public virtual event EventHandler<IStudioComponent> ComponentAdded;
+        public virtual event EventHandler<IStudioComponent> ComponentRemoved;
+        public virtual event EventHandler<IStudioConnection> ConnectionAdded;
+        public virtual event EventHandler<IStudioConnection> ConnectionRemoved;
 
-        protected List<StudioComponent> _components;
-        public IReadOnlyCollection<StudioComponent> Components { get; }
-        protected List<StudioConnection> _connections;
-        public IReadOnlyCollection<StudioConnection> Connections { get; }
+        protected List<IStudioComponent> _components;
+        public IReadOnlyCollection<IStudioComponent> Components { get; }
+        protected List<IStudioConnection> _connections;
+        public IReadOnlyCollection<IStudioConnection> Connections { get; }
         public StudioComponentRepository ComponentRepository { get; }
 
-        private IStudioConnectionFactory connectionFactory;
+        private StudioConnectionFactory connectionFactory;
         protected ILogger logger;
 
 
-        public VirtualStudio() : this(null, null) { }
+        public VirtualStudio() : this(null) { }
 
-        public VirtualStudio(IStudioConnectionFactory connectionFactory = null, ILogger logger = null)
+        public VirtualStudio(ILogger logger = null)
         {
             this.logger = logger ?? NullLogger.Instance;
-            this.connectionFactory = connectionFactory ?? new StudioConnectionFactory();
-            _components = new List<StudioComponent>();
+            this.connectionFactory = new StudioConnectionFactory();
+            _components = new List<IStudioComponent>();
             Components = _components.AsReadOnly();
-            _connections = new List<StudioConnection>();
+            _connections = new List<IStudioConnection>();
             Connections = _connections.AsReadOnly();
             ComponentRepository = new StudioComponentRepository();
         }
 
-        public virtual void AddComponent(StudioComponent component)
+        public virtual void AddComponent(IStudioComponent component)
         {
             if (_components.Contains(component))
             {
@@ -49,7 +49,7 @@ namespace VirtualStudio.Core
             ComponentAdded?.Invoke(this, component);
         }
 
-        public virtual void RemoveComponent(StudioComponent component)
+        public virtual void RemoveComponent(IStudioComponent component)
         {
             if (_components.Remove(component))
             {
@@ -78,16 +78,12 @@ namespace VirtualStudio.Core
         {
             if (IsInputInComponents(input) && IsOutputInComponents(output))
             {
-                var connection = connectionFactory.CreateStudioConnection(output, input);
-                if (connection != null)
-                {
-                    return true;
-                }
+                return connectionFactory.CanCreateStudioConnection(output, input);
             }
             return false;
         }
 
-        public StudioConnection CreateConnection(StudioComponentOutput output, StudioComponentInput input)
+        public IStudioConnection CreateConnection(StudioComponentOutput output, StudioComponentInput input)
         {
             if (IsInputInComponents(input) && IsOutputInComponents(output))
             {
@@ -102,7 +98,7 @@ namespace VirtualStudio.Core
             throw new InvalidOperationException();
         }
 
-        public void RemoveConnection(StudioConnection connection)
+        public void RemoveConnection(IStudioConnection connection)
         {
             if (_connections.Remove(connection))
             {

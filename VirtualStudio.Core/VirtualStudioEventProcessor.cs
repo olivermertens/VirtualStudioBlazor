@@ -55,7 +55,7 @@ namespace VirtualStudio.Core
             virtualStudio.ComponentRepository.PlaceholderRemoved -= ComponentRepository_PlaceholderRemoved;
         }
 
-        private void AttachComponentEventHandlers(StudioComponent component)
+        private void AttachComponentEventHandlers(IStudioComponent component)
         {
             component.PropertyChanged += Component_PropertyChanged;
             component.InputAdded += Component_InputAdded;
@@ -64,7 +64,7 @@ namespace VirtualStudio.Core
             component.OutputRemoved += Component_OutputRemoved;
         }
 
-        private void DetachComponentEventHandlers(StudioComponent component)
+        private void DetachComponentEventHandlers(IStudioComponent component)
         {
             component.PropertyChanged -= Component_PropertyChanged;
             component.InputAdded -= Component_InputAdded;
@@ -84,25 +84,25 @@ namespace VirtualStudio.Core
         #endregion
 
         #region VirtualStudio
-        private void VirtualStudio_ComponentAdded(object sender, StudioComponent component)
+        private void VirtualStudio_ComponentAdded(object sender, IStudioComponent component)
         {
             AttachComponentEventHandlers(component);
             operationHandler.AddComponent(VirtualStudioName, component.Id);
         }
 
-        private void VirtualStudio_ComponentRemoved(object sender, StudioComponent component)
+        private void VirtualStudio_ComponentRemoved(object sender, IStudioComponent component)
         {
             DetachComponentEventHandlers(component);
             operationHandler.RemoveComponent(VirtualStudioName, component.Id);
         }
 
-        private void VirtualStudio_ConnectionAdded(object sender, StudioConnection connection)
+        private void VirtualStudio_ConnectionAdded(object sender, IStudioConnection connection)
         {
             connection.StateChanged += Connection_StateChanged;
             operationHandler.AddConnection(VirtualStudioName, connection.ToDto());
         }
 
-        private void VirtualStudio_ConnectionRemoved(object sender, StudioConnection connection)
+        private void VirtualStudio_ConnectionRemoved(object sender, IStudioConnection connection)
         {
             connection.StateChanged -= Connection_StateChanged;
             operationHandler.RemoveConnection(VirtualStudioName, connection.Id);
@@ -112,25 +112,25 @@ namespace VirtualStudio.Core
 
         #region ComponentRepository
 
-        private void ComponentRepository_ClientAdded(object sender, StudioComponent client)
+        private void ComponentRepository_ClientAdded(object sender, IStudioComponent client)
         {
             AttachComponentEventHandlers(client);
             operationHandler.AddClientToRepository(VirtualStudioName, client.ToDto());
         }
 
-        private void ComponentRepository_ClientRemoved(object sender, StudioComponent client)
+        private void ComponentRepository_ClientRemoved(object sender, IStudioComponent client)
         {
             DetachComponentEventHandlers(client);
             operationHandler.RemoveClientFromRepository(VirtualStudioName, client.Id);
         }
 
-        private void ComponentRepository_PlaceholderAdded(object sender, StudioComponent placeholder)
+        private void ComponentRepository_PlaceholderAdded(object sender, IStudioComponent placeholder)
         {
             AttachComponentEventHandlers(placeholder);
             operationHandler.AddPlaceholderToRepository(VirtualStudioName, placeholder.ToDto());
         }
 
-        private void ComponentRepository_PlaceholderRemoved(object sender, StudioComponent placeholder)
+        private void ComponentRepository_PlaceholderRemoved(object sender, IStudioComponent placeholder)
         {
             DetachComponentEventHandlers(placeholder);
             operationHandler.RemovePlaceholderFromRepository(VirtualStudioName, placeholder.Id);
@@ -162,7 +162,7 @@ namespace VirtualStudio.Core
 
         private void Component_PropertyChanged(object sender, string propertyName)
         {
-            if(sender is StudioComponent component)
+            if(sender is IStudioComponent component)
             {
                 switch(propertyName)
                 {

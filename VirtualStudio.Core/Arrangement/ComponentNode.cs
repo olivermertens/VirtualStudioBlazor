@@ -8,9 +8,9 @@ namespace VirtualStudio.Core.Arrangement
     public class ComponentNode : Node
     {
         public int Id => Component.Id;
-        public StudioComponent Component { get; }
+        public IStudioComponent Component { get; }
 
-        public ComponentNode(StudioComponent component)
+        public ComponentNode(IStudioComponent component)
         {
             Component = component ?? throw new ArgumentNullException(nameof(component));
         }

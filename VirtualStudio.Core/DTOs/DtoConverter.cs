@@ -9,7 +9,7 @@ namespace VirtualStudio.Core.DTOs
     {
         #region StudioComponent
 
-        public static StudioComponentDto ToDto(this StudioComponent component)
+        public static StudioComponentDto ToDto(this IStudioComponent component)
         {
             return new StudioComponentDto
             {
@@ -49,7 +49,7 @@ namespace VirtualStudio.Core.DTOs
 
         #region StudioConnection
 
-        public static StudioConnectionDto ToDto(this StudioConnection studioConnection)
+        public static StudioConnectionDto ToDto(this IStudioConnection studioConnection)
         {
             return new StudioConnectionDto
             {

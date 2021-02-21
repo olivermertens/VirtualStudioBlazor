@@ -6,38 +6,23 @@ using VirtualStudio.Core.Abstractions;
 
 namespace VirtualStudio.Core
 {
-    public class StudioConnectionFactory : IStudioConnectionFactory
+    public class StudioConnectionFactory
     {
-        public string Name => null;
-
-        List<IStudioConnectionFactory> connectionFactories = new List<IStudioConnectionFactory>();
-
-        public bool RegisterStudioConnectionType(IStudioConnectionFactory connectionFactory)
-        {
-            if (connectionFactories.Exists(c => c.Name == connectionFactory.Name))
-                return false;
-            else
-            {
-                connectionFactories.Add(connectionFactory);
-                return true;
-            }
-        }
+        private IdGenerator idGenerator = new IdGenerator();
 
         public bool CanCreateStudioConnection(StudioComponentOutput output, StudioComponentInput input)
         {
-            if (output.ConnectionType == input.ConnectionType && output.DataKind == input.DataKind)
-                return connectionFactories.Exists(c => c.Name == output.ConnectionType);
-            else
-                return false;
+            return
+                (output.Component != null) && (input.Component != null) &&
+                (input.ConnectionType, input.DataKind) == (output.ConnectionType, output.DataKind);
         }
 
-        public StudioConnection CreateStudioConnection(StudioComponentOutput output, StudioComponentInput input)
+        public IStudioConnection CreateStudioConnection(StudioComponentOutput output, StudioComponentInput input)
         {
             if (!CanCreateStudioConnection(output, input))
                 return null;
 
-            IStudioConnectionFactory connectionFactory = connectionFactories.First(c => c.Name == output.ConnectionType);
-            return connectionFactory.CreateStudioConnection(output, input);
+            return new StudioConnection(idGenerator.GetNewId(), output, input);
         }
     }
 }
