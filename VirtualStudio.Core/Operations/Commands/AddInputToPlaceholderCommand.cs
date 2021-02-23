@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VirtualStudio.Core.DTOs;
+using VirtualStudio.Shared.DTOs;
 
 namespace VirtualStudio.Core.Operations
 {
@@ -24,20 +24,20 @@ namespace VirtualStudio.Core.Operations
 
         private bool ProcessSync(VirtualStudio virtualStudio)
         {
-            var component = virtualStudio.Components.FirstOrDefault(c => c.Id == componentId);
-            if(component is null)
+            var component = virtualStudio.FindStudioComponentById(componentId);
+            if (component is null)
             {
-                Error = new OperationError(ErrorType.NotFound, $"Component with ID {componentId} not found.");
+                Error = new OperationError(ErrorType.NotFound, $"StudioComponent with ID {componentId} not found.");
                 return false;
             }
-            if(component is PlaceholderStudioComponent placeholderComponent)
+            if (component is PlaceholderStudioComponent placeholderComponent)
             {
                 placeholderComponent.AddInput(endpoint.Name, endpoint.DataKind, endpoint.ConnectionType);
                 return true;
             }
             else
             {
-                Error = new OperationError(ErrorType.InvalidOperation, $"Component with ID {componentId} is not of type PlaceholderComponent.");
+                Error = new OperationError(ErrorType.NotFound, $"StudioComponent with ID {component} is not a Placeholder.");
                 return false;
             }
         }

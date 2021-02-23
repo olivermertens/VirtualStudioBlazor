@@ -29,7 +29,7 @@ namespace VirtualStudio.Core.Operations
 
         private bool ProcessSync(VirtualStudio virtualStudio)
         {
-            var component = virtualStudio.Components.FirstOrDefault(c => c.Id == componentId);
+            var component = virtualStudio.FindStudioComponentById(componentId);
             if (component is null)
             {
                 Error = new OperationError(ErrorType.NotFound, $"Component with ID {componentId} not found.");

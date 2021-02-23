@@ -1,9 +1,56 @@
 ﻿@page "/control"
 @using Microsoft.AspNetCore.SignalR.Client
+@using VirtualStudio.Core.Operations; 
+@using VirtualStudio.Core.DTOs; 
 @inject NavigationManager NavigationManager
+@implements IAsyncDisposable
 
 <h1>Control</h1>
 
-@code {
+<p>Connection state: @connectionState</p>
 
+<EditForm Model="@this" OnValidSubmit="@JoinVirtualStudio">
+    <InputText id="name" @bind-Value="virtualStudioName" />
+
+    <button type="submit">Join</button>
+</EditForm>
+
+@code {
+    private string virtualStudioName;
+    private HubConnection hubConnection;
+    private string connectionState = "Disconnected";
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += NavigationManager_LocationChanged;
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/control"))
+            .Build();
+
+        await hubConnection.StartAsync();
+        connectionState = hubConnection.State.ToString();
+    }
+
+    private async void NavigationManager_LocationChanged(object sender, LocationChangedEventArgs args)
+    {
+        if(args.Location != NavigationManager.ToAbsoluteUri("control").AbsolutePath)
+        {
+            await DisposeAsync();
+        }
+    }
+
+    private async Task JoinVirtualStudio()
+    {
+        bool success = await hubConnection.InvokeAsync<bool>("JoinVirtualStudio", virtualStudioName);
+        if (success)
+        {
+            var virtualStudio = await hubConnection.InvokeAsync<OperationResponse<VirtualStudioWithArrangementDto>>("GetVirtualStudioWithArrangement");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        NavigationManager.LocationChanged -= NavigationManager_LocationChanged;
+        await hubConnection.DisposeAsync();
+    }
 }

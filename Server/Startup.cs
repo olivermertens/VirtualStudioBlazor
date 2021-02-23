@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
+using VirtualStudio.Core;
 
 namespace VirtualStudio.Server
 {
@@ -25,7 +26,7 @@ namespace VirtualStudio.Server
             services.AddControllersWithViews();
             services.AddRazorPages();
 
-            services.AddSingleton(typeof(StudioManager));
+            services.AddSingleton<VirtualStudioRepository>();
 
             services.AddSignalR();
         }
@@ -56,6 +57,7 @@ namespace VirtualStudio.Server
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
                 endpoints.MapHub<VirtualStudioHub>("virtualstudio");
+                endpoints.MapHub<ControlHub>("control");
                 endpoints.MapFallbackToFile("index.html");
             });
         }

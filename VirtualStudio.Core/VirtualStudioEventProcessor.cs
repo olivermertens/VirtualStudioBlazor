@@ -4,7 +4,8 @@ using System.Text;
 using VirtualStudio.Core;
 using VirtualStudio.Core.Abstractions;
 using VirtualStudio.Core.Arrangement;
-using VirtualStudio.Core.DTOs;
+using VirtualStudio.Shared;
+using VirtualStudio.Shared.Abstractions;
 
 namespace VirtualStudio.Core
 {
@@ -21,7 +22,7 @@ namespace VirtualStudio.Core
             VirtualStudioName = virtualStudioName ?? throw new ArgumentNullException(nameof(virtualStudioName));
             this.operationHandler = operationHandler ?? throw new ArgumentNullException(nameof(operationHandler));
 
-            if (virtualStudio is VirtualStudioArrangement virtualStudioArrangement)
+            if (virtualStudio is VirtualStudioWithArrangement virtualStudioArrangement)
             {
                 virtualStudioArrangement.ComponentNodeMoved += VirtualStudioArrangement_ComponentNodeMoved;
             }
@@ -39,7 +40,7 @@ namespace VirtualStudio.Core
 
         public void Dispose()
         {
-            if (virtualStudio is VirtualStudioArrangement virtualStudioArrangement)
+            if (virtualStudio is VirtualStudioWithArrangement virtualStudioArrangement)
             {
                 virtualStudioArrangement.ComponentNodeMoved -= VirtualStudioArrangement_ComponentNodeMoved;
             }
@@ -79,7 +80,7 @@ namespace VirtualStudio.Core
         #region VirtualStudioArragenment
         private void VirtualStudioArrangement_ComponentNodeMoved(object sender, ComponentNode componentNode)
         {
-            operationHandler.MoveComponentNode(VirtualStudioName, componentNode.Id, componentNode.Position);
+            operationHandler.MoveComponentNode(VirtualStudioName, componentNode.Id, componentNode.Position.X, componentNode.Position.Y);
         }
         #endregion
 
@@ -99,7 +100,7 @@ namespace VirtualStudio.Core
         private void VirtualStudio_ConnectionAdded(object sender, IStudioConnection connection)
         {
             connection.StateChanged += Connection_StateChanged;
-            operationHandler.AddConnection(VirtualStudioName, connection.ToDto());
+            operationHandler.CreateConnection(VirtualStudioName, connection.ToDto());
         }
 
         private void VirtualStudio_ConnectionRemoved(object sender, IStudioConnection connection)

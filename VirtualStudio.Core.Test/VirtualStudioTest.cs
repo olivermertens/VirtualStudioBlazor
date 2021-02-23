@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using VirtualStudio.Core.Abstractions;
+using VirtualStudio.Shared;
 
 namespace VirtualStudio.Core.Test
 {
@@ -12,6 +13,7 @@ namespace VirtualStudio.Core.Test
         {
             var virtualStudio = new VirtualStudio();
             var component = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(component);
 
             virtualStudio.AddComponent(component);
 
@@ -19,11 +21,24 @@ namespace VirtualStudio.Core.Test
         }
 
         [TestMethod]
-        public void Removes_component()
+        public void Does_not_add_component_that_does_not_exist_in_ComponentRepository()
         {
             var virtualStudio = new VirtualStudio();
             var component = new PlaceholderStudioComponent();
-            virtualStudio.AddComponent(component);
+
+            var addedComponent = virtualStudio.AddComponent(component);
+
+            Assert.IsNull(addedComponent);
+            Assert.IsTrue(virtualStudio.Components.Count == 0);
+        }
+
+        [TestMethod]
+        public void Removes_component()
+        {
+            var virtualStudio = new VirtualStudio();
+            var placeholder = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(placeholder);
+            var component = virtualStudio.AddComponent(placeholder) as PlaceholderStudioComponent;
 
             virtualStudio.RemoveComponent(component);
 
@@ -34,8 +49,9 @@ namespace VirtualStudio.Core.Test
         public void Does_not_add_already_existing_component()
         {
             var virtualStudio = new VirtualStudio();
-            var component = new PlaceholderStudioComponent();
-            virtualStudio.AddComponent(component);
+            var placeholder = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(placeholder);
+            var component = virtualStudio.AddComponent(placeholder) as PlaceholderStudioComponent;
 
             virtualStudio.AddComponent(component);
 
@@ -46,10 +62,11 @@ namespace VirtualStudio.Core.Test
         public void Adds_connection_between_endpoints_that_exist_in_components()
         {
             var virtualStudio = new VirtualStudio();
-            var component = new PlaceholderStudioComponent();
+            var placeholder = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(placeholder);
+            var component = virtualStudio.AddComponent(placeholder) as PlaceholderStudioComponent;
             var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
             var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
-            virtualStudio.AddComponent(component);
 
             Assert.IsTrue(virtualStudio.CanCreateConnection(output, input));
 
@@ -63,10 +80,11 @@ namespace VirtualStudio.Core.Test
         public void Removes_connection()
         {
             var virtualStudio = new VirtualStudio();
-            var component = new PlaceholderStudioComponent();
+            var placeholder = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(placeholder);
+            var component = virtualStudio.AddComponent(placeholder) as PlaceholderStudioComponent;
             var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
             var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
-            virtualStudio.AddComponent(component);
             IStudioConnection connection = virtualStudio.CreateConnection(output, input);
 
             virtualStudio.RemoveConnection(connection);
@@ -78,10 +96,11 @@ namespace VirtualStudio.Core.Test
         public void Removes_connection_when_a_related_component_gets_removed()
         {
             var virtualStudio = new VirtualStudio();
-            var component = new PlaceholderStudioComponent();
+            var placeholder = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(placeholder);
+            var component = virtualStudio.AddComponent(placeholder) as PlaceholderStudioComponent;
             var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
             var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
-            virtualStudio.AddComponent(component);
             IStudioConnection connection = virtualStudio.CreateConnection(output, input);
 
             virtualStudio.RemoveComponent(component);
@@ -93,10 +112,11 @@ namespace VirtualStudio.Core.Test
         public void Removes_connection_when_a_related_endpoint_gets_removed_from_the_component()
         {
             var virtualStudio = new VirtualStudio();
-            var component = new PlaceholderStudioComponent();
+            var placeholder = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(placeholder);
+            var component = virtualStudio.AddComponent(placeholder) as PlaceholderStudioComponent;
             var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
             var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
-            virtualStudio.AddComponent(component);
             IStudioConnection connection = virtualStudio.CreateConnection(output, input);
 
             component.RemoveOutput(output);
@@ -110,8 +130,10 @@ namespace VirtualStudio.Core.Test
             var virtualStudio = new VirtualStudio();
             bool wasEventInvoked = false;
             virtualStudio.ComponentAdded += (_, component) => wasEventInvoked = true;
+            var component = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(component);
 
-            virtualStudio.AddComponent(new PlaceholderStudioComponent());
+            virtualStudio.AddComponent(component);
 
             Assert.IsTrue(wasEventInvoked);
         }
@@ -120,9 +142,13 @@ namespace VirtualStudio.Core.Test
         public void Fires_event_when_a_component_gets_removed()
         {
             var virtualStudio = new VirtualStudio();
+            var placeholder = new PlaceholderStudioComponent();
+            virtualStudio.ComponentRepository.AddPlaceholder(placeholder);
+            var component = virtualStudio.AddComponent(placeholder) as PlaceholderStudioComponent;
+            var input = component.AddInput("input", DataKind.Audio, "ConnectionType");
+            var output = component.AddOutput("output", DataKind.Audio, "ConnectionType");
             bool wasEventInvoked = false;
-            var component = new PlaceholderStudioComponent();
-            virtualStudio.AddComponent(component);
+
             virtualStudio.ComponentRemoved += (_, component) => wasEventInvoked = true;
 
             virtualStudio.RemoveComponent(component);

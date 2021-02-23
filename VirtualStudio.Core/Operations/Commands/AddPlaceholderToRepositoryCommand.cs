@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using VirtualStudio.Core.DTOs;
+using VirtualStudio.Shared.DTOs;
 
-namespace VirtualStudio.Core.Operations.Commands
+namespace VirtualStudio.Core.Operations
 {
     public class AddPlaceholderToRepositoryCommand : IVirtualStudioCommand<bool>
     {

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VirtualStudio.Shared;
 
-namespace VirtualStudio.Core.Operations.Commands
+namespace VirtualStudio.Core.Operations
 {
     public class ChangeTargetConnectionStateCommand : IVirtualStudioCommand<bool>
     {
@@ -30,8 +31,13 @@ namespace VirtualStudio.Core.Operations.Commands
                 return false;
             }
 
-            connection.SetTargetState(state);
-            return true;
+            if(connection.SetTargetState(state))
+                return true;
+            else
+            {
+                Error = new OperationError(ErrorType.InvalidArgument, $"TargetState cannot be set to {state}.");
+                return false;
+            }
         }
     }
 }

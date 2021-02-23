@@ -15,6 +15,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\VirtualStudio.Shared.csproj" />
+    <ProjectReference Include="..\VirtualStudio.Core\VirtualStudio.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
   </ItemGroup>
 
 </Project>

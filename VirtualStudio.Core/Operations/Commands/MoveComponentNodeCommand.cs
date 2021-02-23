@@ -28,7 +28,7 @@ namespace VirtualStudio.Core.Operations
 
         private bool ProcessSync(VirtualStudio virtualStudio)
         {
-            if (virtualStudio is VirtualStudioArrangement studioArrangement)
+            if (virtualStudio is VirtualStudioWithArrangement studioArrangement)
             {
                 ComponentNode node = studioArrangement.ComponentNodes.FirstOrDefault(c => c.Id == componentId);
                 if (node is null)

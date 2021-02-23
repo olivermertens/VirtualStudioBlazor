@@ -83,6 +83,13 @@ namespace VirtualStudio.Core
             return found;
         }
 
+        internal PlaceholderStudioComponent GetPlaceholderClone(PlaceholderStudioComponent placeholderComponent)
+        {
+            var clone = placeholderComponent.Clone();
+            clone.SetId(idGenerator.GetNewId());
+            return clone;
+        }
+
         private bool PrepareAddComponent(IStudioComponent component)
         {
             if (Contains(component))

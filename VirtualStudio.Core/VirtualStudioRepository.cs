@@ -31,18 +31,32 @@ namespace VirtualStudio.Core
             return virtualStudios.Keys;
         }
 
+        public bool TryGetVirtualStudio(string name, out VirtualStudio virtualStudio)
+        {
+            virtualStudio = GetVirtualStudio(name);
+            return virtualStudio != null;
+        }
+
         public VirtualStudio GetVirtualStudio(string name)
         {
+            if (string.IsNullOrEmpty(name))
+                return null;
+
             if (virtualStudios.ContainsKey(name))
             {
                 return virtualStudios[name];
             }
             else
             {
-                var virtualStudio = new VirtualStudioArrangement(logger: loggerFactory.CreateLogger<VirtualStudio>());
+                var virtualStudio = new VirtualStudioWithArrangement(logger: loggerFactory.CreateLogger<VirtualStudio>());
                 virtualStudios.Add(name, virtualStudio);
                 return virtualStudio;
             }
+        }
+
+        public bool TryGetVirtualStudio(string v, out object virtualStudio)
+        {
+            throw new NotImplementedException();
         }
     }
 }

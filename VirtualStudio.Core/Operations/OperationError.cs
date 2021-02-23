@@ -11,8 +11,8 @@ namespace VirtualStudio.Core.Operations
 
     public class OperationError
     {
-        ErrorType Type { get; }
-        string Message { get; }
+        public ErrorType Type { get; }
+        public string Message { get; }
 
         public OperationError(ErrorType type, string message)
         {

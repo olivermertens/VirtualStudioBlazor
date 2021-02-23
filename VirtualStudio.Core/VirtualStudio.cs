@@ -15,9 +15,9 @@ namespace VirtualStudio.Core
         public virtual event EventHandler<IStudioConnection> ConnectionRemoved;
 
         protected List<IStudioComponent> _components;
-        public IReadOnlyCollection<IStudioComponent> Components { get; }
+        public IReadOnlyList<IStudioComponent> Components { get; }
         protected List<IStudioConnection> _connections;
-        public IReadOnlyCollection<IStudioConnection> Connections { get; }
+        public IReadOnlyList<IStudioConnection> Connections { get; }
         public StudioComponentRepository ComponentRepository { get; }
 
         private StudioConnectionFactory connectionFactory;
@@ -37,16 +37,29 @@ namespace VirtualStudio.Core
             ComponentRepository = new StudioComponentRepository();
         }
 
-        public virtual void AddComponent(IStudioComponent component)
+        public virtual IStudioComponent AddComponent(IStudioComponent component)
         {
             if (_components.Contains(component))
             {
-                return;
+                return null;
             }
-            _components.Add(component);
-            component.InputRemoved += Component_EndpointRemoved;
-            component.OutputRemoved += Component_EndpointRemoved;
-            ComponentAdded?.Invoke(this, component);
+            IStudioComponent newComponent = null;
+            if (ComponentRepository.Contains(component))
+            {
+                if (component is PlaceholderStudioComponent placeholderComponent)
+                {
+                    newComponent = ComponentRepository.GetPlaceholderClone(placeholderComponent);
+                }
+                else
+                {
+                    newComponent = component;
+                }
+                _components.Add(newComponent);
+                newComponent.InputRemoved += Component_EndpointRemoved;
+                newComponent.OutputRemoved += Component_EndpointRemoved;
+                ComponentAdded?.Invoke(this, newComponent);
+            }
+            return newComponent;
         }
 
         public virtual void RemoveComponent(IStudioComponent component)
@@ -85,7 +98,9 @@ namespace VirtualStudio.Core
 
         public IStudioConnection CreateConnection(StudioComponentOutput output, StudioComponentInput input)
         {
-            if (IsInputInComponents(input) && IsOutputInComponents(output))
+            if (IsInputInComponents(input) &&
+                !_connections.Exists(c => c.Input == input) &&
+                IsOutputInComponents(output))
             {
                 var connection = connectionFactory.CreateStudioConnection(output, input);
                 if (connection != null)
@@ -104,6 +119,21 @@ namespace VirtualStudio.Core
             {
                 ConnectionRemoved?.Invoke(this, connection);
             }
+        }
+
+        public IStudioComponent FindStudioComponentById(int id)
+        {
+            var component = Components.FirstOrDefault(c => c.Id == id);
+            ComponentRepository.Find(c => c.Id == id);
+            if (component is null)
+                component = ComponentRepository.Find(p => p.Id == id);
+
+            return component;
+        }
+
+        public void ReplaceComponent(IStudioComponent component)
+        {
+            throw new NotImplementedException();
         }
 
         private void Component_EndpointRemoved(object sender, IStudioComponentEndpoint endPoint)

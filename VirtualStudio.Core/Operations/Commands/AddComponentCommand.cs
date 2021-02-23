@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VirtualStudio.Core.Abstractions;
+using System.Linq;
 
 namespace VirtualStudio.Core.Operations
 {
@@ -30,6 +31,12 @@ namespace VirtualStudio.Core.Operations
                 Error = new OperationError(ErrorType.NotFound, $"StudioComponent with ID {componentId} not found in ComponentRepository.");
                 return false;
             }
+            if(virtualStudio.Components.Contains(foundComponent))
+            {
+                Error = new OperationError(ErrorType.InvalidOperation, $"The StudioComponent with ID {componentId} was already added.");
+                return false;
+            }
+
             virtualStudio.AddComponent(foundComponent);
             return true;
         }

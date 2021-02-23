@@ -1,32 +1,30 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using VirtualStudio.Shared;
 
 namespace VirtualStudio.Server
 {
-    public class VirtualStudioHub : Hub<IVirtualStudioClient>
+    public class VirtualStudioHub : Hub
     {
-        public VirtualStudioHub()
+        private readonly ILogger<VirtualStudioHub> logger;
+
+        public VirtualStudioHub(ILogger<VirtualStudioHub> logger)
         {
-            
+            this.logger = logger;
         }
 
         public override Task OnConnectedAsync()
         {
-            Console.WriteLine($"Client {Context.ConnectionId} connected.");
+            logger.LogInformation($"Client {Context.ConnectionId} connected.");
             return base.OnConnectedAsync();
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            Console.WriteLine($"Client {Context.ConnectionId} disconnected.");
+            logger.LogInformation($"Client {Context.ConnectionId} disconnected.");
             return base.OnDisconnectedAsync(exception);
-        }
-
-        public bool RegisterStudioClient(StudioClientBase studioClient)
-        {
-            return false;
         }
     }
 }

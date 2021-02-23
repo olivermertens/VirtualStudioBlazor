@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VirtualStudio.Core.Abstractions;
+using VirtualStudio.Shared;
 
 namespace VirtualStudio.Core
 {
@@ -100,10 +101,25 @@ namespace VirtualStudio.Core
         {
             if (!Inputs.Contains(input))
                 throw new ArgumentException("The provided input does not belong to this component.");
-            if (studioConnection.Input == input)
+            if (studioConnection.Input != input)
                 throw new ArgumentException("The provided input does not belong to the provided connnection.");
 
             //Do nothing.
+        }
+
+        internal PlaceholderStudioComponent Clone()
+        {
+            var clone = new PlaceholderStudioComponent
+            {
+                Id = Id,
+                Name = Name,
+            };
+            foreach(var input in Inputs)
+                clone.Inputs.Add(new StudioComponentInput(input.Id, input.Name, input.DataKind, input.ConnectionType, clone));
+            foreach (var output in Outputs)
+                clone.Outputs.Add(new StudioComponentOutput(output.Id, output.Name, output.DataKind, output.ConnectionType, clone));
+
+            return clone;
         }
     }
 }

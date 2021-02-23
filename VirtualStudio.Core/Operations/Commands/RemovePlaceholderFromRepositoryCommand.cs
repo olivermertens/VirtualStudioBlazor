@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VirtualStudio.Core.Operations.Commands
+namespace VirtualStudio.Core.Operations
 {
     public class RemovePlaceholderFromRepositoryCommand : IVirtualStudioCommand<bool>
     {
