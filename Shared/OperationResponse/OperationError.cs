@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace VirtualStudio.Core.Operations
+namespace VirtualStudio.Shared
 {
     public enum ErrorType
     {
-        Undefined, InvalidOperation, InvalidArgument, NotFound, NotAuthorized
+        Undefined, InvalidOperation, InvalidArgument, NotFound, NotAuthorized, Disconnected
     }
 
     public class OperationError

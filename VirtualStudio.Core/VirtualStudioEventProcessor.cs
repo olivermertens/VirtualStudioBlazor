@@ -24,10 +24,14 @@ namespace VirtualStudio.Core
 
             if (virtualStudio is VirtualStudioWithArrangement virtualStudioArrangement)
             {
+                virtualStudioArrangement.ComponentNodeAdded += VirtualStudioArrangement_ComponentNodeAdded;
                 virtualStudioArrangement.ComponentNodeMoved += VirtualStudioArrangement_ComponentNodeMoved;
             }
+            else
+            {
+                virtualStudio.ComponentAdded += VirtualStudio_ComponentAdded;
+            }
 
-            virtualStudio.ComponentAdded += VirtualStudio_ComponentAdded;
             virtualStudio.ComponentRemoved += VirtualStudio_ComponentRemoved;
             virtualStudio.ConnectionAdded += VirtualStudio_ConnectionAdded;
             virtualStudio.ConnectionRemoved += VirtualStudio_ConnectionRemoved;
@@ -36,17 +40,32 @@ namespace VirtualStudio.Core
             virtualStudio.ComponentRepository.ClientRemoved += ComponentRepository_ClientRemoved;
             virtualStudio.ComponentRepository.PlaceholderAdded += ComponentRepository_PlaceholderAdded;
             virtualStudio.ComponentRepository.PlaceholderRemoved += ComponentRepository_PlaceholderRemoved;
+
+            foreach (var component in virtualStudio.Components)
+                if (component is PlaceholderStudioComponent)
+                    AttachComponentEventHandlers(component);
+
+            foreach (var component in virtualStudio.ComponentRepository.Clients)
+                AttachComponentEventHandlers(component);
+
+            foreach (var component in virtualStudio.ComponentRepository.Placeholders)
+                AttachComponentEventHandlers(component);
         }
 
         public void Dispose()
         {
             if (virtualStudio is VirtualStudioWithArrangement virtualStudioArrangement)
             {
+                virtualStudioArrangement.ComponentNodeAdded -= VirtualStudioArrangement_ComponentNodeAdded;
                 virtualStudioArrangement.ComponentNodeMoved -= VirtualStudioArrangement_ComponentNodeMoved;
             }
+            else
+            {
+                virtualStudio.ComponentAdded -= VirtualStudio_ComponentAdded;
+            }
 
-            virtualStudio.ComponentAdded -= VirtualStudio_ComponentAdded;
             virtualStudio.ComponentRemoved -= VirtualStudio_ComponentRemoved;
+
             virtualStudio.ConnectionAdded -= VirtualStudio_ConnectionAdded;
             virtualStudio.ConnectionRemoved -= VirtualStudio_ConnectionRemoved;
 
@@ -78,6 +97,17 @@ namespace VirtualStudio.Core
         #region EventHandlers
 
         #region VirtualStudioArragenment
+        private void VirtualStudioArrangement_ComponentNodeAdded(object sender, ComponentNode componentNode)
+        {
+            if (componentNode.Component is PlaceholderStudioComponent)
+            {
+                AttachComponentEventHandlers(componentNode.Component);
+                operationHandler.AddPlaceholderNode(VirtualStudioName, componentNode.Component.ToDto(), componentNode.Position.X, componentNode.Position.Y);
+            }
+            else
+                operationHandler.AddComponentNode(VirtualStudioName, componentNode.Component.Id, componentNode.Position.X, componentNode.Position.Y);
+        }
+
         private void VirtualStudioArrangement_ComponentNodeMoved(object sender, ComponentNode componentNode)
         {
             operationHandler.MoveComponentNode(VirtualStudioName, componentNode.Id, componentNode.Position.X, componentNode.Position.Y);
@@ -87,9 +117,15 @@ namespace VirtualStudio.Core
         #region VirtualStudio
         private void VirtualStudio_ComponentAdded(object sender, IStudioComponent component)
         {
-            AttachComponentEventHandlers(component);
-            operationHandler.AddComponent(VirtualStudioName, component.Id);
+            if (component is PlaceholderStudioComponent)
+            {
+                AttachComponentEventHandlers(component);
+                operationHandler.AddPlaceholder(VirtualStudioName, component.ToDto());
+            }
+            else
+                operationHandler.AddComponent(VirtualStudioName, component.Id);
         }
+
 
         private void VirtualStudio_ComponentRemoved(object sender, IStudioComponent component)
         {
@@ -163,9 +199,9 @@ namespace VirtualStudio.Core
 
         private void Component_PropertyChanged(object sender, string propertyName)
         {
-            if(sender is IStudioComponent component)
+            if (sender is IStudioComponent component)
             {
-                switch(propertyName)
+                switch (propertyName)
                 {
                     case nameof(component.Name):
                         operationHandler.ChangeComponentProperty(VirtualStudioName, component.Id, propertyName, component.Name);

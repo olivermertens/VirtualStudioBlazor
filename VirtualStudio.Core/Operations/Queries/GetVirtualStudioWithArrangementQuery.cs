@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VirtualStudio.Core.Arrangement;
+using VirtualStudio.Shared;
 using VirtualStudio.Shared.DTOs;
 
 namespace VirtualStudio.Core.Operations
@@ -14,7 +15,10 @@ namespace VirtualStudio.Core.Operations
         public Task<VirtualStudioWithArrangementDto> Process(VirtualStudio virtualStudio)
         {
             if (virtualStudio is VirtualStudioWithArrangement virtualStudioWithArrangement)
-                return Task.FromResult(virtualStudioWithArrangement.ToDto());
+            {
+                var dto = virtualStudioWithArrangement.ToDto();
+                return Task.FromResult(dto);
+            }
             else
             {
                 Error = new OperationError(ErrorType.NotFound, "A VirtualStudioWithArrangement was not found.");

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VirtualStudio.Core.Abstractions;
 using VirtualStudio.Core.Operations;
+using VirtualStudio.Shared;
 
 namespace VirtualStudio.Core.Test.Operations
 {

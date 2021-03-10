@@ -1,8 +1,11 @@
 ﻿@page "/control"
 @using Microsoft.AspNetCore.SignalR.Client
-@using VirtualStudio.Core.Operations; 
-@using VirtualStudio.Core.DTOs; 
+@using VirtualStudio.Core.Operations
+@using VirtualStudio.ViewModels
+@using VirtualStudio.Shared.DTOs
+@using VirtualStudio.Shared
 @inject NavigationManager NavigationManager
+@inject VirtualStudioViaHubConnectionController virtualStudioController
 @implements IAsyncDisposable
 
 <h1>Control</h1>
@@ -14,11 +17,20 @@
 
     <button type="submit">Join</button>
 </EditForm>
+@if (virtualStudioViewModel != null)
+{
+    <NodeGraph ViewModel="virtualStudioViewModel"></NodeGraph>
+}
 
 @code {
     private string virtualStudioName;
     private HubConnection hubConnection;
-    private string connectionState = "Disconnected";
+    private string connectionState { get { if (hubConnection is null) { return "Disconnected"; } else { return hubConnection.State.ToString(); } } }
+    private VirtualStudioViewModel virtualStudioViewModel;
+
+    private readonly System.Text.Json.JsonSerializerOptions jsonSerializerOptions = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+    VirtualStudioViewModelUpdater viewModelUpdater;
+    private List<IDisposable> attachedHandlers;
 
     protected override async Task OnInitializedAsync()
     {
@@ -28,12 +40,11 @@
             .Build();
 
         await hubConnection.StartAsync();
-        connectionState = hubConnection.State.ToString();
     }
 
     private async void NavigationManager_LocationChanged(object sender, LocationChangedEventArgs args)
     {
-        if(args.Location != NavigationManager.ToAbsoluteUri("control").AbsolutePath)
+        if (args.Location != NavigationManager.ToAbsoluteUri("control").AbsolutePath)
         {
             await DisposeAsync();
         }
@@ -44,13 +55,58 @@
         bool success = await hubConnection.InvokeAsync<bool>("JoinVirtualStudio", virtualStudioName);
         if (success)
         {
-            var virtualStudio = await hubConnection.InvokeAsync<OperationResponse<VirtualStudioWithArrangementDto>>("GetVirtualStudioWithArrangement");
+            var getVirtualStudioResponse = await hubConnection.InvokeAsync<OperationResponse<VirtualStudioWithArrangementDto>>("GetVirtualStudioWithArrangement");
+            if (getVirtualStudioResponse.Status == OperationStatus.Success)
+            {
+                var virtualStudioViewModel = new VirtualStudioViewModel(getVirtualStudioResponse.Data);
+                viewModelUpdater = new VirtualStudioViewModelUpdater(virtualStudioViewModel);
+                AttachUpdater(viewModelUpdater, hubConnection);
+                virtualStudioController.VirtualStudioName = virtualStudioName;
+                virtualStudioController.HubConnection = hubConnection;
+                this.virtualStudioViewModel = virtualStudioViewModel;
+            }
         }
+    }
+
+    private void AttachUpdater(VirtualStudioViewModelUpdater updater, HubConnection hubConnection)
+    {
+        if (attachedHandlers != null)
+            throw new InvalidOperationException("Attached handlers already exist.");
+
+        attachedHandlers = new List<IDisposable>();
+        attachedHandlers.Add(hubConnection.On<string, StudioComponentDto>(nameof(updater.AddClientToRepository), (virtualStudioName, dto) => updater.AddClientToRepository(virtualStudioName, dto)));
+        attachedHandlers.Add(hubConnection.On<string, StudioComponentDto>(nameof(updater.AddPlaceholderToRepository), (virtualStudioName, dto) => updater.AddPlaceholderToRepository(virtualStudioName, dto)));
+        attachedHandlers.Add(hubConnection.On<string, int, float, float>(nameof(updater.AddComponentNode), (virtualStudioName, id, x, y) => updater.AddComponentNode(virtualStudioName, id, x, y)));
+        attachedHandlers.Add(hubConnection.On<string, StudioComponentDto, float, float>(nameof(updater.AddPlaceholderNode), (virtualStudioName, dto, x, y) => updater.AddPlaceholderNode(virtualStudioName, dto, x, y)));
+        attachedHandlers.Add(hubConnection.On<string, int, StudioComponentEndpointDto>(nameof(updater.AddInputToComponent), (virtualStudioName, id, dto) => updater.AddInputToComponent(virtualStudioName, id, dto)));
+        attachedHandlers.Add(hubConnection.On<string, int, StudioComponentEndpointDto>(nameof(updater.AddOutputToComponent), (virtualStudioName, id, dto) => updater.AddOutputToComponent(virtualStudioName, id, dto)));
+        attachedHandlers.Add(hubConnection.On<string, int, string, object>(nameof(updater.ChangeComponentProperty), (virtualStudioName, id, propName, value) => updater.ChangeComponentProperty(virtualStudioName, id, propName, value)));
+        attachedHandlers.Add(hubConnection.On<string, int, ConnectionState>(nameof(updater.ChangeConnectionState), (virtualStudioName, id, state) => updater.ChangeConnectionState(virtualStudioName, id, state)));
+        attachedHandlers.Add(hubConnection.On<string, StudioConnectionDto>(nameof(updater.CreateConnection), (virtualStudioName, dto) => updater.CreateConnection(virtualStudioName, dto)));
+        attachedHandlers.Add(hubConnection.On<string, int, float, float>(nameof(updater.MoveComponentNode), (virtualStudioName, id, x, y) => updater.MoveComponentNode(virtualStudioName, id, x, y)));
+        attachedHandlers.Add(hubConnection.On<string, int>(nameof(updater.RemoveClientFromRepository), (virtualStudioName, id) => updater.RemoveClientFromRepository(virtualStudioName, id)));
+        attachedHandlers.Add(hubConnection.On<string, int>(nameof(updater.RemovePlaceholderFromRepository), (virtualStudioName, id) => updater.RemovePlaceholderFromRepository(virtualStudioName, id)));
+        attachedHandlers.Add(hubConnection.On<string, int>(nameof(updater.RemoveComponent), (virtualStudioName, id) => updater.RemoveComponent(virtualStudioName, id)));
+        attachedHandlers.Add(hubConnection.On<string, int>(nameof(updater.RemoveConnection), (virtualStudioName, id) => updater.RemoveConnection(virtualStudioName, id)));
+        attachedHandlers.Add(hubConnection.On<string, int, int>(nameof(updater.RemoveInputFromComponent), (virtualStudioName, compId, id) => updater.RemoveInputFromComponent(virtualStudioName, compId, id)));
+        attachedHandlers.Add(hubConnection.On<string, int, int>(nameof(updater.RemoveOutputFromComponent), (virtualStudioName, compId, id) => updater.RemoveOutputFromComponent(virtualStudioName, compId, id)));
+    }
+
+    private void DetachUpdater(VirtualStudioViewModelUpdater updater, HubConnection hubConnection)
+    {
+        if (attachedHandlers is null)
+            return;
+
+        foreach (var handler in attachedHandlers)
+            handler.Dispose();
+
+        attachedHandlers = null;
     }
 
     public async ValueTask DisposeAsync()
     {
         NavigationManager.LocationChanged -= NavigationManager_LocationChanged;
+        DetachUpdater(viewModelUpdater, hubConnection);
         await hubConnection.DisposeAsync();
     }
 }

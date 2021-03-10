@@ -10,6 +10,7 @@ namespace VirtualStudio.Core.Arrangement
     public class VirtualStudioWithArrangement : VirtualStudio
     {
         public event EventHandler<ComponentNode> ComponentNodeMoved;
+        public event EventHandler<ComponentNode> ComponentNodeAdded;
 
         private List<ComponentNode> _componentNodes;
         public IReadOnlyCollection<ComponentNode> ComponentNodes { get; }
@@ -34,7 +35,9 @@ namespace VirtualStudio.Core.Arrangement
                 if (component != null)
                 {
                     var componentNode = new ComponentNode(component) { Position = targetPosition };
+                    componentNode.PositionChanged += ComponentNode_PositionChanged;
                     _componentNodes.Add(componentNode);
+                    ComponentNodeAdded?.Invoke(this, componentNode);
                     return componentNode;
                 }
             }
@@ -45,7 +48,9 @@ namespace VirtualStudio.Core.Arrangement
         {
             if (_components.Contains(component))
             {
-                _componentNodes.Remove(_componentNodes.Single(c => c.Component == component));
+                var node = _componentNodes.Single(c => c.Component == component);
+                _componentNodes.Remove(node);
+                node.PositionChanged -= ComponentNode_PositionChanged;
                 base.RemoveComponent(component);
             }
         }
@@ -55,8 +60,13 @@ namespace VirtualStudio.Core.Arrangement
             if (_componentNodes.Contains(component))
             {
                 component.Position = to;
-                ComponentNodeMoved?.Invoke(this, component);
             }
+        }
+
+        private void ComponentNode_PositionChanged(object sender, Position2D e)
+        {
+            if (sender is ComponentNode node)
+                ComponentNodeMoved?.Invoke(this, node);
         }
     }
 }

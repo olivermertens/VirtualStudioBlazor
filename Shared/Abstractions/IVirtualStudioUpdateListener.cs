@@ -1,30 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using VirtualStudio.Shared.DTOs;
 
 namespace VirtualStudio.Shared.Abstractions
 {
     public interface IVirtualStudioUpdateListener
     {
-        void MoveComponentNode(string virtualStudioName, int componentId, float x, float y);
+        Task MoveComponentNode(string virtualStudioName, int componentId, float x, float y);
 
-        void AddComponent(string virtualStudioName, int componentId);
-        void RemoveComponent(string virtualStudioName, int componentId);
-        void CreateConnection(string virtualStudioName, StudioConnectionDto connection);
-        void RemoveConnection(string virtualStudioName, int connectionId);
+        Task AddComponent(string virtualStudioName, int componentId);
+        Task AddComponentNode(string virtualStudioName, int componentId, float x, float y);
+        Task AddPlaceholder(string virtualStudioName, StudioComponentDto component);
+        Task AddPlaceholderNode(string virtualStudioName, StudioComponentDto component, float x, float y);
+        Task RemoveComponent(string virtualStudioName, int componentId);
+        Task CreateConnection(string virtualStudioName, StudioConnectionDto connection);
+        Task RemoveConnection(string virtualStudioName, int connectionId);
 
-        void ChangeComponentProperty(string virtualStudioName, int componentId, string propertyName, object value);
-        void AddInputToComponent(string virtualStudioName, int componentId, StudioComponentEndpointDto endpoint);
-        void RemoveInputFromComponent(string virtualStudioName, int componentId, int endpointId);
-        void AddOutputToComponent(string virtualStudioName, int componentId, StudioComponentEndpointDto endpoint);
-        void RemoveOutputFromComponent(string virtualStudioName, int componentId, int endpointId);
+        Task ChangeComponentProperty(string virtualStudioName, int componentId, string propertyName, object value);
+        Task AddInputToComponent(string virtualStudioName, int componentId, StudioComponentEndpointDto endpoint);
+        Task RemoveInputFromComponent(string virtualStudioName, int componentId, int endpointId);
+        Task AddOutputToComponent(string virtualStudioName, int componentId, StudioComponentEndpointDto endpoint);
+        Task RemoveOutputFromComponent(string virtualStudioName, int componentId, int endpointId);
 
-        void ChangeConnectionState(string virtualStudioName, int connectionId, ConnectionState state);
+        Task ChangeConnectionState(string virtualStudioName, int connectionId, ConnectionState state);
 
-        void AddClientToRepository(string virtualStudioName, StudioComponentDto component);
-        void RemoveClientFromRepository(string virtualStudioName, int componentId);
-        void AddPlaceholderToRepository(string virtualStudioName, StudioComponentDto component);
-        void RemovePlaceholderFromRepository(string virtualStudioName, int componentId);
+        Task AddClientToRepository(string virtualStudioName, StudioComponentDto component);
+        Task RemoveClientFromRepository(string virtualStudioName, int componentId);
+        Task AddPlaceholderToRepository(string virtualStudioName, StudioComponentDto component);
+        Task RemovePlaceholderFromRepository(string virtualStudioName, int componentId);
     }
 }

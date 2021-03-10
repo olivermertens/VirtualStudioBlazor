@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VirtualStudio.Core.Abstractions;
 using System.Linq;
+using VirtualStudio.Shared;
 
 namespace VirtualStudio.Core.Operations
 {

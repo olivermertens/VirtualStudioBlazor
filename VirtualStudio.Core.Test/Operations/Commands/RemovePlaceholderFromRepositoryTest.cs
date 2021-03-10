@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VirtualStudio.Core.Operations;
+using VirtualStudio.Shared;
 
 namespace VirtualStudio.Core.Test.Operations
 {
@@ -35,7 +36,7 @@ namespace VirtualStudio.Core.Test.Operations
             var removeCommand = new RemovePlaceholderFromRepositoryCommand(999);
             await removeCommand.Process(virtualStudio);
 
-            Assert.IsTrue(removeCommand.Error.Type == Core.Operations.ErrorType.NotFound);
+            Assert.IsTrue(removeCommand.Error.Type == ErrorType.NotFound);
         }
     }
 }

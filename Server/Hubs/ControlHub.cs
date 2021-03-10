@@ -14,7 +14,7 @@ using VirtualStudio.Shared.DTOs;
 
 namespace VirtualStudio.Server
 {
-    public class ControlHub : Hub<IVirtualStudioUpdateListener>
+    public class ControlHub : Hub<IVirtualStudioUpdateListener>, IVirtualStudioController
     {
         #region static
         static ConcurrentDictionary<string, string> connectionIdToGroupMapping = new ConcurrentDictionary<string, string>();
@@ -104,6 +104,12 @@ namespace VirtualStudio.Server
         public Task<OperationResponse<VirtualStudioWithArrangementDto>> GetVirtualStudioWithArrangement()
             => ExecuteOperation(new GetVirtualStudioWithArrangementQuery());
 
+
+        #region IVirtualStudioController
+
+        public Task<OperationResponse> AddNewPlaceholderToRepository()
+            => ExecuteOperation(new AddPlaceholderToRepositoryCommand(new StudioComponentDto()));
+
         public Task<OperationResponse> AddPlaceholderToRepository(StudioComponentDto placeholder)
             => ExecuteOperation(new AddPlaceholderToRepositoryCommand(placeholder));
 
@@ -125,8 +131,17 @@ namespace VirtualStudio.Server
         public Task<OperationResponse> AddComponent(int componentId)
             => ExecuteOperation(new AddComponentCommand(componentId));
 
+        public Task<OperationResponse> AddComponentNode(int componentId, float x, float y)
+            => ExecuteOperation(new AddComponentNodeCommand(componentId, x, y));
+
         public Task<OperationResponse> RemoveComponent(int componentId)
             => ExecuteOperation(new RemoveComponentCommand(componentId));
+
+        public Task<OperationResponse> ChangeComponentProperty(int componentId, string propertyName, object value)
+            => ExecuteOperation(new ChangeComponentPropertyCommand(componentId, propertyName, value));
+
+        public Task<OperationResponse> MoveComponentNode(int componentId, float x, float y)
+            => ExecuteOperation(new MoveComponentNodeCommand(componentId, x, y));
 
         public Task<OperationResponse> CreateConnection(int outputComponentId, int outputId, int inputComponentId, int inputId)
             => ExecuteOperation(new CreateConnectionCommand(outputComponentId, outputId, inputComponentId, inputId));
@@ -137,10 +152,6 @@ namespace VirtualStudio.Server
         public Task<OperationResponse> ChangeTargetConnectionState(int connectionId, ConnectionState state)
             => ExecuteOperation(new ChangeTargetConnectionStateCommand(connectionId, state));
 
-        public Task<OperationResponse> ChangeComponentProperty(int componentId, string propertyName, object value)
-            => ExecuteOperation(new ChangeComponentPropertyCommand(componentId, propertyName, value));
-
-        public Task<OperationResponse> MoveComponentNode(int componentId, Position2D position)
-            => ExecuteOperation(new MoveComponentNodeCommand(componentId, position));
+        #endregion
     }
 }

@@ -31,6 +31,7 @@ namespace VirtualStudio.Core
         {
             return new StudioComponentEndpointDto
             {
+                Id = studioComponentEndpoint.Id,
                 Name = studioComponentEndpoint.Name,
                 DataKind = studioComponentEndpoint.DataKind,
                 IOType = studioComponentEndpoint.IOType,

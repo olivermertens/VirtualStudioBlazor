@@ -1,0 +1,95 @@
+﻿@using VirtualStudio.ViewModels
+@using System.ComponentModel
+@inject INodeDragService NodeDragService
+@inject IJSRuntime JSRuntime
+@inject VirtualStudioViaHubConnectionController virtualStudioController
+@implements IDisposable
+
+<div class="node @CssClass"
+     style="transform: translate(@((long)ViewModel.PositionX)px, @((long)ViewModel.PositionY)px);--col-node-accent:@cssColor;"
+     @onmousedown="StartDrag" @onmousedown:stopPropagation
+     @onclick="Select"
+     @onfocusin="Deselect">
+
+
+    <div class="node-title"
+         style="background-color: var(--col-node-accent);">
+        <b>@ViewModel.Component.Name</b>
+    </div>
+
+    <div class="node-content"
+         @onclick:stopPropagation
+         @onkeydown:stopPropagation
+         @onmousedown:stopPropagation>
+        <table>
+            <tr>
+                <th>Inputs</th>
+                <th>Outputs</th>
+            </tr>
+            <tr>
+                <td>
+                    <NodeInputListView ViewModel="ViewModel.Component.Inputs"></NodeInputListView>
+                </td>
+                <td>
+                    <NodeInputListView ViewModel="ViewModel.Component.Outputs"></NodeInputListView>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+@code {
+    ComponentNodeViewModel _viewModel;
+    [Parameter]
+    public ComponentNodeViewModel ViewModel
+    {
+        get => _viewModel;
+        set
+        {
+            if (_viewModel != null)
+                _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+            _viewModel = value ?? throw new ArgumentNullException();
+            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+        }
+    }
+
+    ElementReference NodeDiv { get; set; }
+    string cssColor = "#ff8c00";
+
+    string CssClass => ViewModel.IsSelected ? "node-selected" : "";
+
+    async Task StartDrag(MouseEventArgs e)
+    {
+        NodeDragService.OnStartNodeDrag(ViewModel, e);
+        await JSRuntime.InvokeVoidAsync("NodeDragHandler.startNodeDrag");
+    }
+
+    void Select(MouseEventArgs e)
+    {
+        ViewModel.IsSelected = true;
+        //if (!NodeDragService.IsDrag(e))
+        //{
+        //    NodeHandler.SelectNode(Data);
+        //}
+    }
+
+    void Deselect()
+    {
+        ViewModel.IsSelected = false;
+        // NodeHandler.DeselectAllNodes();
+    }
+
+    void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        if (_viewModel != null)
+        {
+            _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+            _viewModel = null;
+        }
+    }
+}

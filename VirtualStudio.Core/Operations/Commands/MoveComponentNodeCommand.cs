@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VirtualStudio.Core.Abstractions;
 using VirtualStudio.Core.Arrangement;
+using VirtualStudio.Shared;
 
 namespace VirtualStudio.Core.Operations
 {
@@ -13,12 +14,13 @@ namespace VirtualStudio.Core.Operations
         public OperationError Error { get; private set; }
 
         private readonly int componentId;
-        private readonly Position2D position;
+        private readonly float x, y;
 
-        public MoveComponentNodeCommand(int componentId, Position2D position)
+        public MoveComponentNodeCommand(int componentId, float x, float y)
         {
             this.componentId = componentId;
-            this.position = position;
+            this.x = x;
+            this.y = y;
         }
 
         public Task<bool> Process(VirtualStudio virtualStudio)
@@ -36,7 +38,7 @@ namespace VirtualStudio.Core.Operations
                     Error = new OperationError(ErrorType.NotFound, $"ComponentNode with ID {componentId} not found.");
                     return false;
                 }
-                node.Position = position;
+                node.Position = new Position2D(x, y);
                 return true;
             }
             return false;

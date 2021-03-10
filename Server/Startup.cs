@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
 using VirtualStudio.Core;
+using VirtualStudio.Shared.Abstractions;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace VirtualStudio.Server
 {
@@ -26,7 +29,12 @@ namespace VirtualStudio.Server
             services.AddControllersWithViews();
             services.AddRazorPages();
 
-            services.AddSingleton<VirtualStudioRepository>();
+            services.AddSingleton<VirtualStudioRepository>(services =>
+            {
+                var controlHubContext = services.GetService<IHubContext<ControlHub, IVirtualStudioUpdateListener>>();
+                var loggerFactory = services.GetService<ILoggerFactory>();
+                return new VirtualStudioRepository(new VirtualStudioUpdateSender(controlHubContext), loggerFactory);
+            });
 
             services.AddSignalR();
         }

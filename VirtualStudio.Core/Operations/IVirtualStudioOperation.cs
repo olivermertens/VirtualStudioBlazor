@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VirtualStudio.Core.Abstractions;
+using VirtualStudio.Shared;
 
 namespace VirtualStudio.Core.Operations
 {

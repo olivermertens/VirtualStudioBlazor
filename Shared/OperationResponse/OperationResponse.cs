@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using VirtualStudio.Core.Operations;
 
-namespace VirtualStudio.Core.Operations
+namespace VirtualStudio.Shared
 {
     public enum OperationStatus
     {
