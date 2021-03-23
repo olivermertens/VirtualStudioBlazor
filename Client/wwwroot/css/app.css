@@ -182,6 +182,24 @@ app {
     }
 }
 
+.noodle {
+    position: absolute;
+    transform-origin: 0% 50%;
+    stroke: var(--col-noodle);
+    stroke-width: 3px;
+    pointer-events: none;
+    fill: none;
+}
+
+    .noodle.noodle-invalid {
+        background-color: orangered;
+        stroke: orangered;
+    }
+
+#tempNoodle {
+    stroke-dasharray: 5;
+}
+
 /*.viewport {
     position: relative;
     overflow: hidden;

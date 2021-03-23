@@ -36,6 +36,8 @@ namespace VirtualStudio.Server
                 return new VirtualStudioRepository(new VirtualStudioUpdateSender(controlHubContext), loggerFactory);
             });
 
+            services.AddSingleton<VirtualStudioClientProvider>();
+
             services.AddSignalR();
         }
 

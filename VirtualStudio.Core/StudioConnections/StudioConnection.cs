@@ -38,21 +38,21 @@ namespace VirtualStudio.Core
             Output.ConnectionStateUpdated += Output_ConnectionStateUpdated;
             Input.ConnectionStateUpdated += Input_ConnectionStateUpdated;
             State = ConnectionState.Disconnected;
-            TargetState = ConnectionState.Disconnected;
+            SetTargetState(ConnectionState.Connected);
         }
 
-        private void Output_ConnectionStateUpdated(object sender, (IStudioConnection connection, ConnectionState state) e)
+        private void Output_ConnectionStateUpdated(object sender, (int connectionId, ConnectionState state) e)
         {
-            if (e.connection == this  && e.state != outputConnectionState)
+            if (e.connectionId == Id && e.state != outputConnectionState)
             {
                 outputConnectionState = e.state;
                 UpdateConnectionState();
             }
         }
 
-        private void Input_ConnectionStateUpdated(object sender, (IStudioConnection connection, ConnectionState state) e)
+        private void Input_ConnectionStateUpdated(object sender, (int connectionId, ConnectionState state) e)
         {
-            if (e.connection == this && e.state != inputConnectionState)
+            if (e.connectionId == Id && e.state != inputConnectionState)
             {
                 inputConnectionState = e.state;
                 UpdateConnectionState();
@@ -88,8 +88,8 @@ namespace VirtualStudio.Core
         {
             if (!destroyed)
             {
-                Output.ConnectionStateUpdated += Output_ConnectionStateUpdated;
-                Input.ConnectionStateUpdated += Input_ConnectionStateUpdated;
+                Output.ConnectionStateUpdated -= Output_ConnectionStateUpdated;
+                Input.ConnectionStateUpdated -= Input_ConnectionStateUpdated;
                 destroyed = true;
             }
         }

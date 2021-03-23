@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtualStudio.ViewModels", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtualStudio.ViewModels.Test", "VirtualStudio.ViewModels.Test\VirtualStudio.ViewModels.Test.csproj", "{DECC07F3-309D-4F82-88B5-AC481B3CAF3C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtualStudio.StudioClient", "VirtualStudio.StudioClient\VirtualStudio.StudioClient.csproj", "{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,18 @@ Global
 		{DECC07F3-309D-4F82-88B5-AC481B3CAF3C}.Release|x64.Build.0 = Release|Any CPU
 		{DECC07F3-309D-4F82-88B5-AC481B3CAF3C}.Release|x86.ActiveCfg = Release|Any CPU
 		{DECC07F3-309D-4F82-88B5-AC481B3CAF3C}.Release|x86.Build.0 = Release|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Debug|x64.Build.0 = Debug|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Debug|x86.Build.0 = Debug|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Release|x64.ActiveCfg = Release|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Release|x64.Build.0 = Release|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Release|x86.ActiveCfg = Release|Any CPU
+		{F6A4E628-A065-40DC-8EEC-4C0BBA8B6E80}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

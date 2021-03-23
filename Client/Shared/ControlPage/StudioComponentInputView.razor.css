@@ -1,0 +1,11 @@
+﻿.studiocomponent-input {
+    display: flex;
+    align-items: center;
+    position: relative;
+    left: -15%;
+    width: 115%;
+}
+
+    .studiocomponent-input .description {
+        flex-grow: 1;
+    }

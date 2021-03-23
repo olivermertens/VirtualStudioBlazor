@@ -21,7 +21,7 @@ namespace VirtualStudio.Core.Test.Operations
             virtualStudio = new VirtualStudio();
             placeholderInRepository = new PlaceholderStudioComponent();
             placeholderInRepository.SetName("New Placeholder");
-            placeholderInRepository.AddInput("Input 1", DataKind.Other, "hgdfhgoid");
+            placeholderInRepository.AddInput("Input 1", DataKind.Data, "hgdfhgoid");
             virtualStudio.ComponentRepository.AddPlaceholder(placeholderInRepository);
             placeholderInComponents = virtualStudio.AddComponent(placeholderInRepository) as PlaceholderStudioComponent;
         }

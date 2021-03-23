@@ -13,6 +13,12 @@ namespace VirtualStudio.Client.Shared
             this.y = y;
         }
 
+        public Vector2((float x, float y) positionTuple)
+        {
+            x = positionTuple.x;
+            y = positionTuple.y;
+        }
+
         public double GetLength()
         {
             return Math.Sqrt((x * x) + (y * y));

@@ -1,0 +1,62 @@
+﻿@using VirtualStudio.ViewModels
+@inject INoodleDragService NoodleDragService
+
+<div draggable="true" class="input-dot"
+     onmousedown="event.stopPropagation()" ondrag="tempNoodle.dragNoodle(event)"
+     @ondragstart="OnDragStart" @ondragstart:stopPropagation
+     @ondrop="OnDrop" @ondragend="OnDragEnd"
+     ondragover="event.preventDefault()" />
+
+@code {
+    [Parameter]
+    public StudioComponentEndpointViewModel ViewModel { get; set; }
+
+    [CascadingParameter]
+    protected SignalRVirtualStudioController VirtualStudioController { get; set; }
+
+    [CascadingParameter]
+    protected VirtualStudioViewModel VirtualStudioViewModel { get; set; }
+
+    void OnDragStart(DragEventArgs e)
+    {
+        if (TryGetConnection(out ConnectionViewModel connection))
+            NoodleDragService.OnStartNoodleDrag(connection.Output, connection.Input);
+    }
+
+    async void OnDragEnd(DragEventArgs e)
+    {
+        NoodleDragService.CancelDrag();
+
+        if (DidDragEndOnOwnPosition(e))
+            return;
+
+        if (TryGetConnection(out ConnectionViewModel connection))
+            await VirtualStudioController.RemoveConnection(connection.Id);
+    }
+
+    async void OnDrop()
+    {
+        var output = NoodleDragService.Output;
+        NoodleDragService.OnDropNoodle(ViewModel);
+        if (TryGetConnection(out _))
+            return;
+
+        await VirtualStudioController.CreateConnection(output.ComponentViewModel.Id, output.Id, ViewModel.ComponentViewModel.Id, ViewModel.Id);
+    }
+
+    private bool TryGetConnection(out ConnectionViewModel connection)
+    {
+        connection = VirtualStudioViewModel.Connections.FirstOrDefault(c => c.Input == ViewModel);
+        return connection != null;
+    }
+
+    private bool DidDragEndOnOwnPosition(DragEventArgs e)
+    {
+        float threshold = 15;
+        return
+            e.OffsetX > -threshold &&
+            e.OffsetX < threshold &&
+            e.OffsetY > -threshold &&
+            e.OffsetY < threshold;
+    }
+}

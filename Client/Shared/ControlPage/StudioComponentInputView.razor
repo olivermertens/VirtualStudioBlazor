@@ -1,0 +1,13 @@
+﻿@using VirtualStudio.ViewModels
+
+<div class="studiocomponent-input" 
+     style="height: @($"{ComponentViewModel.EndpointHeight}px")">
+    <StudioComponentInputDot ViewModel="ViewModel" />
+    <div class="description">
+        <StudioComponentEndpointDescription ViewModel="ViewModel" />
+    </div>
+</div>
+
+@code {
+    [Parameter] public StudioComponentEndpointViewModel ViewModel { get; set; }
+}

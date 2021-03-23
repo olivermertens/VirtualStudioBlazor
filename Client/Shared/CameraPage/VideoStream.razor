@@ -1,0 +1,18 @@
+﻿@inject IJSRuntime JS
+
+<button disabled="@(isStreamOpen || isTaskRunning)" @onclick="OpenCamera">Open camera</button>
+<video @ref="sendingVideoElement" autoplay playsinline></video>
+<video @ref="receivingVideoElement" autoplay playsinline></video>
+
+@code {
+    ElementReference sendingVideoElement;
+    ElementReference receivingVideoElement;
+    private bool isTaskRunning = false;
+    private bool isStreamOpen = false;
+
+    private void OpenCamera()
+    {
+        isTaskRunning = true;
+        JS.InvokeVoidAsync("WebRtcService.openCameraStream", sendingVideoElement);
+    }
+}

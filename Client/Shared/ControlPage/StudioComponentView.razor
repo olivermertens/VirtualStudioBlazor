@@ -1,0 +1,35 @@
+﻿@using VirtualStudio.ViewModels
+
+<div class="studiocomponent">
+    <div class="studiocomponent-title"
+         style="height: @($"{ComponentViewModel.TitleHeight}px"); background-color: var(--col-node-accent);">
+        <b>@ViewModel.Name</b>
+    </div>
+
+    <div class="studiocomponent-content"
+         @onclick:stopPropagation
+         @onkeydown:stopPropagation
+         @onmousedown:stopPropagation>
+        <table>
+            <tr>
+                <td class="studiocomponent-inputs">
+                    @foreach (var input in ViewModel.Inputs)
+                    {
+                        <StudioComponentInputView ViewModel="input" />
+                    }
+                </td>
+                <td class="studiocomponent-outputs">
+                    @foreach (var output in ViewModel.Outputs)
+                    {
+                        <StudioComponentOutputView ViewModel="output" />
+                    }
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public ComponentViewModel ViewModel { get; set; }
+}

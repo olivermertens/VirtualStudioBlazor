@@ -1,0 +1,108 @@
+﻿@using VirtualStudio.ViewModels
+@using System.Collections.ObjectModel
+@using System.Collections.Specialized
+@using VirtualStudio.Shared
+
+@foreach (var noodle in noodles)
+{
+    <NoodleSvg Noodle="noodle" />
+}
+
+
+@code {
+    [Parameter]
+    public ObservableCollection<ConnectionViewModel> Connections
+    {
+        get => _connections;
+        set
+        {
+            if (_connections != null)
+                _connections.CollectionChanged -= OnConnectionsChanged;
+            _connections = value;
+            if (_connections != null)
+            {
+                InitializeNoodles(_connections);
+                _connections.CollectionChanged += OnConnectionsChanged;
+            }
+        }
+    }
+    public ObservableCollection<ConnectionViewModel> _connections;
+
+    private class Noodle : INoodleData, IDisposable
+    {
+        private static string GetColor(ConnectionState connectionState)
+        {
+            return connectionState switch
+            {
+                ConnectionState.Connected => "var(--col-connectionstate-connected)",
+                ConnectionState.Disconnected => "var(--col-connectionstate-disconnected)",
+                ConnectionState.Connecting => "var(--col-connectionstate-connecting)",
+                ConnectionState.Disconnecting => "var(--col-connectionstate-disconnecting)",
+                ConnectionState.Destroyed => "var(--col-connectionstate-destroyed)",
+                ConnectionState.Unknown => "var(--col-connectionstate-unknown)",
+                _ => "var(--col-connectionstate-unknown)"
+            };
+        }
+
+        public event EventHandler NoodleChanged;
+
+        public int ConnectionId => connection.Id;
+        public Vector2 StartPos => new Vector2(connection.Output.Position.Value);
+        public Vector2 EndPos => new Vector2(connection.Input.Position.Value);
+        public bool Connected { get; } = true;
+        public string Color => GetColor(connection.State);
+
+        private readonly ConnectionViewModel connection;
+
+        public Noodle(ConnectionViewModel connection)
+        {
+            connection.Input.ComponentViewModel.Node.PropertyChanged += Refresh;
+            connection.Output.ComponentViewModel.Node.PropertyChanged += Refresh;
+            this.connection = connection;
+        }
+
+        private void Refresh(object sender, EventArgs args) => Refresh();
+
+        public void Refresh()
+        {
+            NoodleChanged?.Invoke(this, null);
+        }
+
+        public void Dispose()
+        {
+            connection.Input.ComponentViewModel.Node.PropertyChanged -= Refresh;
+            connection.Output.ComponentViewModel.Node.PropertyChanged -= Refresh;
+        }
+    }
+
+    private List<Noodle> noodles = new List<Noodle>();
+
+    private void InitializeNoodles(IEnumerable<ConnectionViewModel> connections)
+    {
+        foreach (var noodle in noodles)
+            noodle.Dispose();
+
+        noodles.Clear();
+        AddNewNoodles(connections);
+    }
+
+    private void OnConnectionsChanged(object sender, NotifyCollectionChangedEventArgs args)
+    {
+        InitializeNoodles(_connections);
+
+        StateHasChanged();
+    }
+
+    private void AddNewNoodles(IEnumerable<ConnectionViewModel> newConnections)
+    {
+        foreach (var connection in newConnections)
+            noodles.Add(new Noodle(connection));
+
+    }
+
+    private void RemoveNoodles(IEnumerable<ConnectionViewModel> removedConnections)
+    {
+        foreach (var connection in removedConnections)
+            noodles.Remove(noodles.First(n => n.ConnectionId == connection.Id));
+    }
+}

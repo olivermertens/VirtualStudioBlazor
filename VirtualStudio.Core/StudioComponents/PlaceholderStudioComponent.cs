@@ -25,8 +25,8 @@ namespace VirtualStudio.Core
         public event EventHandler<StudioComponentOutput> OutputAdded;
         public event EventHandler<StudioComponentOutput> OutputRemoved;
         public event EventHandler<string> PropertyChanged;
-        public event EventHandler<(StudioComponentInput input, IStudioConnection connection, ConnectionState state)> InputConnectionStateUpdated;
-        public event EventHandler<(StudioComponentOutput output, IStudioConnection connection, ConnectionState state)> OutputConnectionStateUpdated;
+        public event EventHandler<(StudioComponentInput input, int connectionId, ConnectionState state)> InputConnectionStateUpdated;
+        public event EventHandler<(StudioComponentOutput output, int connectionId, ConnectionState state)> OutputConnectionStateUpdated;
 
         private IdGenerator idGenerator = new IdGenerator();
 

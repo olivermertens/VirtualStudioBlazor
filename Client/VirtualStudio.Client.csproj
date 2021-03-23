@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Blazored.Toast" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.3" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.3" />
@@ -21,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\VirtualStudio.Shared.csproj" />
+    <ProjectReference Include="..\VirtualStudio.ConnectionTypes.WebRtc\VirtualStudio.ConnectionTypes.WebRtc.csproj" />
     <ProjectReference Include="..\VirtualStudio.Core\VirtualStudio.Core.csproj" />
     <ProjectReference Include="..\VirtualStudio.ViewModels\VirtualStudio.ViewModels.csproj" />
   </ItemGroup>
@@ -32,5 +34,36 @@
   <ItemGroup>
     <TypeScriptCompile Include="wwwroot\js\NodeDragHandler.ts" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Shared\StudioComponentInputDot - Copy - Copy.razor.css">
+      <DependentUpon>StudioComponentInputDot - Copy.razor.css</DependentUpon>
+    </None>
+    <None Update="Shared\StudioComponentInputDot - Copy.razor.css">
+      <DependentUpon>StudioComponentInputDot.razor.css</DependentUpon>
+    </None>
+    <None Update="Shared\StudioComponentInputView - Copy - Copy.razor.css">
+      <DependentUpon>StudioComponentInputView - Copy.razor.css</DependentUpon>
+    </None>
+    <None Update="Shared\StudioComponentInputView - Copy.razor.css">
+      <DependentUpon>StudioComponentInputView.razor.css</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <TypeScriptTarget>ESNext</TypeScriptTarget>
+    <TypeScriptJSXEmit>React</TypeScriptJSXEmit>
+    <TypeScriptModuleKind>AMD</TypeScriptModuleKind>
+    <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
+    <TypeScriptNoImplicitAny>False</TypeScriptNoImplicitAny>
+    <TypeScriptRemoveComments>False</TypeScriptRemoveComments>
+    <TypeScriptOutFile />
+    <TypeScriptOutDir />
+    <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
+    <TypeScriptNoEmitOnError>True</TypeScriptNoEmitOnError>
+    <TypeScriptSourceMap>True</TypeScriptSourceMap>
+    <TypeScriptMapRoot />
+    <TypeScriptSourceRoot />
+  </PropertyGroup>
 
 </Project>

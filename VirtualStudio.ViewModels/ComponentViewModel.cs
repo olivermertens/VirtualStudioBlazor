@@ -9,6 +9,10 @@ namespace VirtualStudio.ViewModels
 {
     public class ComponentViewModel : INotifyPropertyChanged
     {
+        public static float TitleHeight = 50;
+        public static float EndpointHeight = 50;
+        public static float Width = 200;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public int Id { get; }
@@ -20,6 +24,8 @@ namespace VirtualStudio.ViewModels
             set { _name = value; InvokePropertyChanged(nameof(Name)); }
         }
 
+
+        public ComponentNodeViewModel Node { get; set; }
         public ObservableCollection<StudioComponentEndpointViewModel> Inputs { get; } = new ObservableCollection<StudioComponentEndpointViewModel>();
         public ObservableCollection<StudioComponentEndpointViewModel> Outputs { get; } = new ObservableCollection<StudioComponentEndpointViewModel>();
 

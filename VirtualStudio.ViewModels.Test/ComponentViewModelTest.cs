@@ -24,7 +24,7 @@ namespace VirtualStudio.ViewModels.Test
                 },
                 Outputs = new List<StudioComponentEndpointDto>
                 {
-                    new StudioComponentEndpointDto(){IOType = Shared.EndpointIOType.Output, ConnectionType = "hgffds", DataKind = Shared.DataKind.Other, Id = 1, Name = "Output 1"}
+                    new StudioComponentEndpointDto(){IOType = Shared.EndpointIOType.Output, ConnectionType = "hgffds", DataKind = Shared.DataKind.Data, Id = 1, Name = "Output 1"}
                 }             
             };
 

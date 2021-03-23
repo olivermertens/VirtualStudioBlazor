@@ -8,7 +8,7 @@ namespace VirtualStudio.Core
 {
     public sealed class StudioComponentOutput : IStudioComponentEndpoint, IDisposable
     {
-        public event EventHandler<(IStudioConnection connection, ConnectionState state)> ConnectionStateUpdated;
+        public event EventHandler<(int connectionId, ConnectionState state)> ConnectionStateUpdated;
 
         public EndpointIOType IOType => EndpointIOType.Output;
         public int Id { get; internal set; }
@@ -36,10 +36,10 @@ namespace VirtualStudio.Core
             Dispose();
         }
 
-        private void Component_OutputConnectionStateUpdated(object sender, (StudioComponentOutput output, IStudioConnection connection, ConnectionState state) e)
+        private void Component_OutputConnectionStateUpdated(object sender, (StudioComponentOutput output, int connectionId, ConnectionState state) e)
         {
             if (e.output == this)
-                ConnectionStateUpdated?.Invoke(this, (e.connection, e.state));
+                ConnectionStateUpdated?.Invoke(this, (e.connectionId, e.state));
         }
 
         public void Dispose()

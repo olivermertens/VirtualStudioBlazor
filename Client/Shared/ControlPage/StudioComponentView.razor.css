@@ -1,0 +1,24 @@
+﻿.studiocomponent {
+}
+
+    .studiocomponent .studiocomponent-title {
+        background-color: var(--col-node-default);
+        padding: 2px 4px 0px 4px;
+        border-radius: 8px 8px 0px 0px;
+        color: var(--col-text-invert);
+        cursor: pointer;
+        text-align:center;
+    }
+
+    .studiocomponent .studiocomponent-content {
+        padding: 0px 4px 4px 4px;
+    }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td {
+    width: 50%;
+}

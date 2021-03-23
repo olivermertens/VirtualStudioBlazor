@@ -73,14 +73,16 @@ namespace VirtualStudio.Core
                 {
                     foreach (var input in component.Inputs)
                     {
-                        _connections.RemoveAll(c => c.Input == input);
+                        foreach (var connection in _connections.Where(c => c.Input == input).ToList())
+                            RemoveConnection(connection);
                     }
                 }
                 if (component.Outputs != null)
                 {
                     foreach (var output in component.Outputs)
                     {
-                        _connections.RemoveAll(c => c.Output == output);
+                        foreach (var connection in _connections.Where(c => c.Output == output).ToList())
+                            RemoveConnection(connection);
                     }
                 }
                 ComponentRemoved?.Invoke(this, component);
@@ -115,10 +117,13 @@ namespace VirtualStudio.Core
 
         public void RemoveConnection(IStudioConnection connection)
         {
-            if (_connections.Remove(connection))
-            {
-                ConnectionRemoved?.Invoke(this, connection);
-            }
+            if (!_connections.Contains(connection))
+                return;
+
+            connection.SetTargetState(Shared.ConnectionState.Destroyed);
+
+            _connections.Remove(connection);
+            ConnectionRemoved?.Invoke(this, connection);
         }
 
         public IStudioComponent FindStudioComponentById(int id)

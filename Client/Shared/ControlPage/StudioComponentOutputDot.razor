@@ -1,0 +1,23 @@
+﻿@using VirtualStudio.ViewModels
+@inject INoodleDragService NoodleDragService
+
+<div draggable="true" class="output-dot"
+     onmousedown="event.stopPropagation()" ondrag="tempNoodle.dragNoodle(event)"
+     @ondragstart="OnDragStart" @ondragstart:stopPropagation
+     @ondragend="OnDragEnd"
+     ondragover="event.preventDefault()" />
+
+@code {
+    [Parameter]
+    public StudioComponentEndpointViewModel ViewModel { get; set; }
+
+    void OnDragStart(DragEventArgs e)
+    {
+        NoodleDragService.OnStartNoodleDrag(ViewModel);
+    }
+
+    void OnDragEnd(DragEventArgs e)
+    {
+        NoodleDragService.CancelDrag();
+    }
+}

@@ -8,8 +8,8 @@ namespace VirtualStudio.Core.Abstractions
 {
     public interface IStudioComponent
     {
-        event EventHandler<(StudioComponentInput input, IStudioConnection connection, ConnectionState state)> InputConnectionStateUpdated;
-        event EventHandler<(StudioComponentOutput output, IStudioConnection connection, ConnectionState state)> OutputConnectionStateUpdated;
+        event EventHandler<(StudioComponentInput input, int connectionId, ConnectionState state)> InputConnectionStateUpdated;
+        event EventHandler<(StudioComponentOutput output, int connectionId, ConnectionState state)> OutputConnectionStateUpdated;
         event EventHandler<StudioComponentInput> InputAdded;
         event EventHandler<StudioComponentInput> InputRemoved;
         event EventHandler<StudioComponentOutput> OutputAdded;

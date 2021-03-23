@@ -1,0 +1,11 @@
+﻿.studiocomponent-output {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+    width: 115%;
+}
+
+    .studiocomponent-output .description {
+        flex-grow: 1;
+    }

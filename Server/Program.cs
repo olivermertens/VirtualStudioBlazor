@@ -20,6 +20,10 @@ namespace VirtualStudio.Server
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.ConfigureKestrel(options =>
+                    {
+                        options.ListenAnyIP(5001, listenOpt => listenOpt.UseHttps());
+                    });
                     webBuilder.UseStartup<Startup>();
                 });
     }

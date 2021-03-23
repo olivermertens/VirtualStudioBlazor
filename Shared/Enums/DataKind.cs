@@ -6,6 +6,10 @@ namespace VirtualStudio.Shared
 {
     public enum DataKind
     {
-        Other, Video, Audio
+        Nothing = 0,
+        Video = 1,
+        Audio = 2,
+        VideoAudio = 3,
+        Data = 4, 
     }
 }

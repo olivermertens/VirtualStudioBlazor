@@ -1,0 +1,15 @@
+﻿:root {
+    --col-bg-1: hsl(218, 10%, 5%);
+    --col-bg-2: hsl(218, 25%, 9%);
+    /**/
+    --col-datakind-video: #ffb87a;
+    --col-datakind-audio: #abfc9f;
+    --col-datakind-other: #d6d6d6;
+    /**/
+    --col-connectionstate-disconnected: #969696;
+    --col-connectionstate-connected: #78d164;
+    --col-connectionstate-connecting: #659c9b;
+    --col-connectionstate-disconnecting: #659c9b;
+    --col-connectionstate-destroyed: #ff0000;
+    --col-connectionstate-unknown: #d400ff;
+}

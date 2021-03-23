@@ -1,0 +1,12 @@
+﻿@using VirtualStudio.ViewModels
+
+<div class="name">
+    @ViewModel.Name
+</div>
+<div class="description">
+    @ViewModel.DataKind @ViewModel.ConnectionType
+</div>
+
+@code {
+    [Parameter] public StudioComponentEndpointViewModel ViewModel { get; set; }
+}

@@ -78,6 +78,7 @@ namespace VirtualStudio.Core
             var placeholder1 = new PlaceholderStudioComponent();
             placeholder1.SetName("Placeholder with input");
             placeholder1.AddInput("Input 1", DataKind.Audio, "WebRtc");
+            placeholder1.AddInput("Input 2", DataKind.Video, "NDI");
             var placeholder2 = new PlaceholderStudioComponent();
             placeholder2.SetName("Placeholder with output");
             placeholder2.AddOutput("Output 1", DataKind.Audio, "WebRtc");
@@ -85,7 +86,7 @@ namespace VirtualStudio.Core
             virtualStudio.ComponentRepository.AddPlaceholder(placeholder2);
             var componentNode1 = virtualStudio.AddComponent(placeholder1, new Position2D(100, 100));
             var componentNode2 = virtualStudio.AddComponent(placeholder2, new Position2D(100, 250));
-            virtualStudio.CreateConnection(componentNode2.Component.Outputs[0], componentNode1.Component.Inputs[0]);
+            //virtualStudio.CreateConnection(componentNode2.Component.Outputs[0], componentNode1.Component.Inputs[0]);
         }
     }
 }

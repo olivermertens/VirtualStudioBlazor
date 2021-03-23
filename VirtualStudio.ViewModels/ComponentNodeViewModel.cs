@@ -7,6 +7,18 @@ namespace VirtualStudio.ViewModels
 {
     public class ComponentNodeViewModel : NodeViewModel
     {
-        public ComponentViewModel Component { get; set; }
+        private ComponentViewModel _component;
+        public ComponentViewModel Component 
+        {
+            get => _component;
+            set
+            {
+                if (_component != null)
+                    _component.Node = null;
+                _component = value;
+                if (_component != null)
+                    _component.Node = this;
+            }
+        }
     }
 }

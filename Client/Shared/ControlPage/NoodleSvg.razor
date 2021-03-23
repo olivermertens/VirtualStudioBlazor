@@ -1,0 +1,50 @@
+﻿<path id="@DomId" class="noodle" d="@PathInstructions"
+      style="@(Noodle.Connected ? "" : "display:none;") stroke: @Noodle.Color" />
+
+@code {
+
+    [Parameter]
+    public INoodleData Noodle
+    {
+        get => _noodle;
+        set
+        {
+            if (_noodle != null)
+                _noodle.NoodleChanged -= Refresh;
+            _noodle = value;
+            if (_noodle != null)
+                _noodle.NoodleChanged += Refresh;
+        }
+    }
+    [Parameter] public string DomId { get; set; } = null;
+   
+
+
+    private INoodleData _noodle;
+
+    public bool Valid { get; set; } = true;
+    protected string PathInstructions
+    {
+        get
+        {
+            var startX = (long)Noodle.StartPos.x;
+            var startY = (long)Noodle.StartPos.y + 0.01d;
+            var endX = (long)Noodle.EndPos.x;
+            var endY = (long)Noodle.EndPos.y;
+            double ctrlLength = 5 + 0.4 * Math.Abs(endX - startX) + Math.Min(0.2 * Math.Abs(endY - startY), 40);
+            return FormattableString.Invariant(
+                $"M {startX} {startY} C {startX + ctrlLength} {startY} {endX - ctrlLength} {endY} {endX} {endY}");
+        }
+    }
+
+    public void Refresh(object sender, EventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        if(Noodle != null)
+            Noodle.NoodleChanged -= Refresh;
+    }
+}

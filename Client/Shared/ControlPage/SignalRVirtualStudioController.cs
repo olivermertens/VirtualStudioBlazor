@@ -7,10 +7,16 @@ using VirtualStudio.Shared.DTOs;
 
 namespace VirtualStudio.Client
 {
-    public class VirtualStudioViaHubConnectionController : IVirtualStudioController
+    public class SignalRVirtualStudioController : IVirtualStudioController
     {
         public string VirtualStudioName { get; set; }
-        public HubConnection HubConnection { get; set; }
+        public HubConnection HubConnection { get; }
+
+        public SignalRVirtualStudioController(string virtualStudioName, HubConnection hubConnection)
+        {
+            VirtualStudioName = virtualStudioName;
+            HubConnection = hubConnection ?? throw new ArgumentNullException(nameof(hubConnection));
+        }
 
         private async Task<OperationResponse> InvokeIfConnected(Func<Task<OperationResponse>> hubInvocation)
         {

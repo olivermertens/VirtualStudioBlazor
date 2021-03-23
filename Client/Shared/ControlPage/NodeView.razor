@@ -2,40 +2,15 @@
 @using System.ComponentModel
 @inject INodeDragService NodeDragService
 @inject IJSRuntime JSRuntime
-@inject VirtualStudioViaHubConnectionController virtualStudioController
 @implements IDisposable
 
 <div class="node @CssClass"
-     style="transform: translate(@((long)ViewModel.PositionX)px, @((long)ViewModel.PositionY)px);--col-node-accent:@cssColor;"
+     style="transform: translate(@((long)ViewModel.PositionX)px, @((long)ViewModel.PositionY)px); width: @($"{ComponentViewModel.Width}px"); --col-node-accent:@cssColor;"
      @onmousedown="StartDrag" @onmousedown:stopPropagation
      @onclick="Select"
      @onfocusin="Deselect">
 
-
-    <div class="node-title"
-         style="background-color: var(--col-node-accent);">
-        <b>@ViewModel.Component.Name</b>
-    </div>
-
-    <div class="node-content"
-         @onclick:stopPropagation
-         @onkeydown:stopPropagation
-         @onmousedown:stopPropagation>
-        <table>
-            <tr>
-                <th>Inputs</th>
-                <th>Outputs</th>
-            </tr>
-            <tr>
-                <td>
-                    <NodeInputListView ViewModel="ViewModel.Component.Inputs"></NodeInputListView>
-                </td>
-                <td>
-                    <NodeInputListView ViewModel="ViewModel.Component.Outputs"></NodeInputListView>
-                </td>
-            </tr>
-        </table>
-    </div>
+    <StudioComponentView ViewModel="ViewModel.Component" />
 </div>
 
 @code {
@@ -53,6 +28,9 @@
         }
     }
 
+    [CascadingParameter]
+    protected SignalRVirtualStudioController VirtualStudioController { get; set; }
+
     ElementReference NodeDiv { get; set; }
     string cssColor = "#ff8c00";
 
@@ -60,7 +38,7 @@
 
     async Task StartDrag(MouseEventArgs e)
     {
-        NodeDragService.OnStartNodeDrag(ViewModel, e);
+        NodeDragService.OnStartNodeDrag(ViewModel, e, VirtualStudioController);
         await JSRuntime.InvokeVoidAsync("NodeDragHandler.startNodeDrag");
     }
 

@@ -20,8 +20,8 @@ namespace VirtualStudio.Client
             builder.RootComponents.Add<App>("app");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-            builder.Services.AddSingleton<VirtualStudioViaHubConnectionController>();
             builder.Services.AddScoped<INodeDragService, NodeDragService>();
+            builder.Services.AddScoped<INoodleDragService, NoodleDragService>();
 
             await builder.Build().RunAsync();
         }

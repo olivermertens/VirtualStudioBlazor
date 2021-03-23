@@ -1,0 +1,8 @@
+﻿.output-dot {
+    width: 17px;
+    height: 17px;
+    background-color: white;
+    border-radius: 50%;
+    z-index: 1;
+    border: 2px solid black;
+}

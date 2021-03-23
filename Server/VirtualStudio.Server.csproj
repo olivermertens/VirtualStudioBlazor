@@ -12,6 +12,7 @@
     <ProjectReference Include="..\Client\VirtualStudio.Client.csproj" />
     <ProjectReference Include="..\Shared\VirtualStudio.Shared.csproj" />
     <ProjectReference Include="..\VirtualStudio.Core\VirtualStudio.Core.csproj" />
+    <ProjectReference Include="..\VirtualStudio.StudioClient\VirtualStudio.StudioClient.csproj" />
   </ItemGroup>
 
 
