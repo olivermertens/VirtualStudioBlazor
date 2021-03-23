@@ -15,5 +15,9 @@
     <ProjectReference Include="..\VirtualStudio.StudioClient\VirtualStudio.StudioClient.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 
 </Project>
