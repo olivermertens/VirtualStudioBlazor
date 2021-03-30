@@ -201,8 +201,8 @@ namespace VirtualStudio.Core.Test
             var connection = virtualStudio.CreateConnection(output, input);
             operationHandlerMock.Setup(m => m.ChangeConnectionState(virtualStudioName, 1, connectionState)).Verifiable();
 
-            componentMock.Raise(m => m.InputConnectionStateUpdated += null, null, (input, connection, connectionState));
-            componentMock.Raise(m => m.OutputConnectionStateUpdated += null, null, (output, connection, connectionState));
+            componentMock.Raise(m => m.InputConnectionStateUpdated += null, null, (input, connection.Id, connectionState));
+            componentMock.Raise(m => m.OutputConnectionStateUpdated += null, null, (output, connection.Id, connectionState));
 
             operationHandlerMock.Verify();
         }

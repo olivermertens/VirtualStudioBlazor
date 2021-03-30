@@ -109,6 +109,7 @@ namespace VirtualStudio.Core
                 {
                     _connections.Add(connection);
                     ConnectionAdded?.Invoke(this, connection);
+                    connection.SetTargetState(Shared.ConnectionState.Connected);
                     return connection;
                 }
             }

@@ -14,7 +14,8 @@ namespace VirtualStudio.Core
         {
             return
                 (output.Component != null) && (input.Component != null) &&
-                (input.ConnectionType, input.DataKind) == (output.ConnectionType, output.DataKind);
+                input.ConnectionType == output.ConnectionType &&
+                (input.DataKind & output.DataKind) != Shared.DataKind.Nothing;
         }
 
         public IStudioConnection CreateStudioConnection(StudioComponentOutput output, StudioComponentInput input)

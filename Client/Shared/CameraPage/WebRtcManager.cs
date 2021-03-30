@@ -20,23 +20,24 @@ namespace VirtualStudio.Client.Shared.CameraPage
         private readonly StudioComponentDto studioComponent;
         private readonly List<Connection> connections = new List<Connection>();
         private readonly ElementReference receivingVideoElement;
+        private readonly ElementReference rtpTimestamp;
         private int handlerId;
 
-        public static async Task<WebRtcManager> CreateAsync(HubConnection hubConnection, StudioComponentDto studioComponent, IJSRuntime jsRuntime, ElementReference receivingVideoElement)
+        public static async Task<WebRtcManager> CreateAsync(HubConnection hubConnection, StudioComponentDto studioComponent, IJSRuntime jsRuntime, ElementReference receivingVideoElement, ElementReference rtpTimestamp)
         {
-            var manager = new WebRtcManager(hubConnection, studioComponent, jsRuntime, receivingVideoElement);
+            var manager = new WebRtcManager(hubConnection, studioComponent, jsRuntime, receivingVideoElement, rtpTimestamp);
             manager.handlerId = await jsRuntime.InvokeAsync<int>("WebRtcHandlerManager.createHandler");
             return manager;
         }
 
-        private WebRtcManager(HubConnection hubConnection, StudioComponentDto studioComponent, IJSRuntime jsRuntime, ElementReference receivingVideoElement)
+        private WebRtcManager(HubConnection hubConnection, StudioComponentDto studioComponent, IJSRuntime jsRuntime, ElementReference receivingVideoElement, ElementReference rtpTimestamp)
         {
             this.studioComponent = studioComponent;
             this.hubConnection = hubConnection;
             this.jsRuntime = jsRuntime;
             this.receivingVideoElement = receivingVideoElement;
+            this.rtpTimestamp = rtpTimestamp;
             objRef = DotNetObjectReference.Create(this);
-
             handlers.Add(hubConnection.On<int, int, DataKind>(nameof(RequestSdpOffer), RequestSdpOffer));
             handlers.Add(hubConnection.On<int, int, DataKind, string>(nameof(RequestSdpAnswer), RequestSdpAnswer));
             handlers.Add(hubConnection.On<int, RtcIceCandidateInit>(nameof(AddIceCandidate), AddIceCandidate));
@@ -90,7 +91,7 @@ namespace VirtualStudio.Client.Shared.CameraPage
         public async Task RequestSdpAnswer(int connectionId, int endPointId, DataKind dataKind, string sdpOffer)
         {
             Console.WriteLine("RequestSdpAnswer");
-            var sdpAnswer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpAnswer", handlerId, connectionId, sdpOffer, receivingVideoElement, objRef);
+            var sdpAnswer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpAnswer", handlerId, connectionId, sdpOffer, receivingVideoElement, rtpTimestamp, objRef);
             await hubConnection.SendAsync("RespondSdpAnswer", connectionId, sdpAnswer);
         }
 

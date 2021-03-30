@@ -51,7 +51,7 @@ namespace VirtualStudio.Core.Test
         {
             var connection = studioConnectionFactory.CreateStudioConnection(output, input);
 
-            inputComponentMock.Raise(c => c.InputConnectionStateUpdated += null, inputComponentMock.Object, (input, connection, ConnectionState.Connecting));
+            inputComponentMock.Raise(c => c.InputConnectionStateUpdated += null, inputComponentMock.Object, (input, connection.Id, ConnectionState.Connecting));
 
             Assert.IsTrue(connection.State == ConnectionState.Connecting);
         }
@@ -61,7 +61,7 @@ namespace VirtualStudio.Core.Test
         {
             var connection = studioConnectionFactory.CreateStudioConnection(output, input);
 
-            outputComponentMock.Raise(c => c.OutputConnectionStateUpdated += null, outputComponentMock.Object, (output, connection, ConnectionState.Connecting));
+            outputComponentMock.Raise(c => c.OutputConnectionStateUpdated += null, outputComponentMock.Object, (output, connection.Id, ConnectionState.Connecting));
 
             Assert.IsTrue(connection.State == ConnectionState.Connecting);
         }
@@ -90,8 +90,8 @@ namespace VirtualStudio.Core.Test
         {
             var connection = studioConnectionFactory.CreateStudioConnection(output, input);
 
-            inputComponentMock.Raise(c => c.InputConnectionStateUpdated += null, inputComponentMock.Object, (input, connection, inputState));
-            outputComponentMock.Raise(c => c.OutputConnectionStateUpdated += null, outputComponentMock.Object, (output, connection, outputState));
+            inputComponentMock.Raise(c => c.InputConnectionStateUpdated += null, inputComponentMock.Object, (input, connection.Id, inputState));
+            outputComponentMock.Raise(c => c.OutputConnectionStateUpdated += null, outputComponentMock.Object, (output, connection.Id, outputState));
 
             Assert.IsTrue(connection.State == resultingState);
         }

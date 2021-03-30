@@ -18,8 +18,8 @@
         return await this.webRtcServiceInstances.get(handlerId).getSdpOffer(connectionId, dataKind, objRef);
     }
 
-    public async getSdpAnswer(handlerId: number, connectionId: number, sdpOffer: string, videoElement: HTMLVideoElement, objRef: dotNetObjectRef): Promise<string> {
-        return await this.webRtcServiceInstances.get(handlerId).getSdpAnswer(connectionId, sdpOffer, videoElement, objRef);
+    public async getSdpAnswer(handlerId: number, connectionId: number, sdpOffer: string, videoElement: HTMLVideoElement, rtpTimestampParagraph: HTMLParagraphElement, objRef: dotNetObjectRef): Promise<string> {
+        return await this.webRtcServiceInstances.get(handlerId).getSdpAnswer(connectionId, sdpOffer, videoElement, rtpTimestampParagraph, objRef);
     }
 
     public async addIceCandidate(handlerId: number, connectionId: number, candidate: string, sdpMid: string, sdpMLineIndex: number, usernameFragement: string) {
@@ -60,10 +60,11 @@ class WebRtcHandler {
             return;
 
         try {
-            this.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio:true });
+            this.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             let videoTracks = this.stream.getVideoTracks();
             console.log(`Using video device: ${videoTracks[0].label}`);
             videoElement.srcObject = this.stream;
+            videoElement.muted = true;
         } catch (e) {
             if (e.name === 'ConstraintNotSatisfiedError') {
                 console.error(`The resolution is not supported by your device.`);
@@ -76,7 +77,7 @@ class WebRtcHandler {
         }
     }
 
-    private getMediaStreamConstraints(dataKind: number) : MediaStreamConstraints {
+    private getMediaStreamConstraints(dataKind: number): MediaStreamConstraints {
         switch (dataKind) {
             case 1: return { video: true };
             case 2: return { audio: true };
@@ -90,15 +91,39 @@ class WebRtcHandler {
             return;
         }
 
-        const rtcPeerConnection = new RTCPeerConnection({ iceServers: this.iceServers });
+        // @ts-ignore
+        const rtcPeerConnection = new RTCPeerConnection({ iceServers: this.iceServers, encodedInsertableStreams: true });
         rtcPeerConnection.onconnectionstatechange = () => this.dotNetInvokeOnConnectionStateChanged(objRef, connectionId, false, rtcPeerConnection.connectionState);
         rtcPeerConnection.onicecandidate = iceEvent => this.dotNetInvokeOnIceCandidate(objRef, iceEvent, connectionId);
+
+        // @ts-ignore 
+        const supportsInsertableStreams = !!RTCRtpSender.prototype.createEncodedVideoStreams;
+        if (supportsInsertableStreams)
+            console.log("InsertableStreams are supported.");
+        else
+            console.log("InsertableStreams are not supported.");
 
         var constraints = this.getMediaStreamConstraints(dataKind);
         if (constraints.video) {
             this.stream.getVideoTracks().forEach(track => {
-                rtcPeerConnection.addTrack(track, this.stream);
+
+                const sender = rtcPeerConnection.addTrack(track, this.stream);
                 console.log("Added track: " + track.label);
+                try {
+                    let senderTransformStream = new TransformStream({
+                        transform: (chunk, controller) => {
+                            this.appendUint8ValueToFrame(chunk, Date.now())
+                            controller.enqueue(chunk);
+                        }
+                    });
+                    // @ts-ignore
+                    const streams = sender.createEncodedStreams();
+                    streams.readableStream
+                        .pipeThrough(senderTransformStream)
+                        .pipeTo(streams.writableStream);
+                } catch {
+                    console.log("Init insertable stream failed.");
+                }
             });
         }
         if (constraints.audio) {
@@ -119,20 +144,72 @@ class WebRtcHandler {
         }
     }
 
-    public async getSdpAnswer(connectionId: number, sdpOffer: string, videoElement: HTMLVideoElement, objRef: dotNetObjectRef): Promise<string> {
+    appendUint8ValueToFrame(chunk, value: number) {
+        const frameLength: number = chunk.data.byteLength;
+        const metadataLength = 4;
+
+        const dataBuffer = new ArrayBuffer(frameLength + metadataLength);
+        const dataArray = new Uint8Array(dataBuffer);
+        dataArray.set(new Uint8Array(chunk.data), 0);
+        const dataView = new DataView(dataBuffer);
+        dataView.setUint32(frameLength, value);
+
+        chunk.data = dataBuffer;
+    }
+
+    separateUint8ValueFromFrame(chunk): number {
+        const view = new DataView(chunk.data);
+        const frameLength = chunk.data.byteLength - 4;
+        chunk.data = chunk.data.slice(0, frameLength);
+        return view.getUint32(frameLength);
+    }
+
+    public async getSdpAnswer(connectionId: number, sdpOffer: string, videoElement: HTMLVideoElement, rtpTimestampParagraph: HTMLParagraphElement, objRef: dotNetObjectRef): Promise<string> {
         if (this.videoInRtcPeerConnection != null) {
             console.log('RTCPeerConnection for Video In already exists.');
             return;
         }
 
-        const rtcPeerConnection = new RTCPeerConnection({ iceServers: this.iceServers });
+        // @ts-ignore
+        const rtcPeerConnection = new RTCPeerConnection({ iceServers: this.iceServers, encodedInsertableStreams: true });
         rtcPeerConnection.onconnectionstatechange = () => this.dotNetInvokeOnConnectionStateChanged(objRef, connectionId, true, rtcPeerConnection.connectionState);
         rtcPeerConnection.onicecandidate = iceEvent => this.dotNetInvokeOnIceCandidate(objRef, iceEvent, connectionId);
+
+        const logFrameMetadata = (now: DOMHighResTimeStamp, metadata) => {
+            if (!!metadata.rtpTimestamp)
+                rtpTimestampParagraph.innerText = JSON.stringify(metadata, null, 2);
+            // @ts-ignore
+            videoElement.requestVideoFrameCallback(logFrameMetadata);
+        }
 
         rtcPeerConnection.ontrack = (e) => {
             try {
                 console.log("Set remote stream.");
+                // @ts-ignore 
+                const supportsInsertableStreams = !!RTCRtpSender.prototype.createEncodedVideoStreams;
+                if (supportsInsertableStreams) {
+                    console.log("InsertableStreams are supported.");
+                    let receiverTransformStream = new TransformStream({
+                        transform: (chunk, controller) => {
+                            var time = this.separateUint8ValueFromFrame(chunk);
+                            rtpTimestampParagraph.innerText = "Time: " + time;
+                            controller.enqueue(chunk);
+                        }
+                    });
+
+                    // @ts-ignore
+                    var streams = e.receiver.createEncodedStreams();
+                    streams.readableStream
+                        .pipeThrough(receiverTransformStream)
+                        .pipeTo(streams.writableStream);
+                }
+                else {
+                    console.log("InsertableStreams are not supported.");
+                }
+
                 videoElement.srcObject = e.streams[0];
+                // @ts-ignore
+                // videoElement.requestVideoFrameCallback(logFrameMetadata);
                 console.log("Remote stream set.");
             } catch (ex) {
                 console.log("Setting remote stream failed.", ex);
@@ -152,6 +229,8 @@ class WebRtcHandler {
             console.log('Creating sdp answer failed', ex);
         }
     }
+
+
 
     public async addIceCandidate(connectionId: number, candidate: string, sdpMid: string, sdpMLineIndex: number, usernameFragement: string) {
         if (candidate == null)
@@ -207,7 +286,7 @@ class WebRtcHandler {
         console.log("Disconnected connection ID " + connectionId);
     }
 
-    private dotNetInvokeOnConnectionStateChanged(objRef: dotNetObjectRef, connectionId: number, isInput:boolean, connectionState) {
+    private dotNetInvokeOnConnectionStateChanged(objRef: dotNetObjectRef, connectionId: number, isInput: boolean, connectionState) {
         objRef.invokeMethodAsync("OnConnectionStateChanged", connectionId, isInput, connectionState);
     }
 
@@ -220,4 +299,19 @@ class WebRtcHandler {
             objRef.invokeMethodAsync("OnIceCandidate", connectionId, null, null, 0, null);
         }
     }
+}
+
+/**
+ * Does nothing.
+ * @implements {FrameTransform} in pipeline.js
+ */
+class NullTransform { // eslint-disable-line no-unused-vars
+    /** @override */
+    async init() { }
+    /** @override */
+    async transform(frame, controller) {
+        controller.enqueue(frame);
+    }
+    /** @override */
+    destroy() { }
 }

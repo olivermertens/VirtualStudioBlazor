@@ -38,7 +38,7 @@ namespace VirtualStudio.Core
             Output.ConnectionStateUpdated += Output_ConnectionStateUpdated;
             Input.ConnectionStateUpdated += Input_ConnectionStateUpdated;
             State = ConnectionState.Disconnected;
-            SetTargetState(ConnectionState.Connected);
+            TargetState = ConnectionState.Disconnected;
         }
 
         private void Output_ConnectionStateUpdated(object sender, (int connectionId, ConnectionState state) e)

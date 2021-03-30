@@ -61,7 +61,7 @@ namespace VirtualStudio.Core.Operations
                 Error = new OperationError(ErrorType.NotFound, $"Cannot find output with ID {outputId} on component with ID {outputComponentId}.");
                 return false;
             }
-            if(output.DataKind != input.DataKind)
+            if((input.DataKind & output.DataKind) == DataKind.Nothing)
             {
                 Error = new OperationError(ErrorType.InvalidOperation, "DataKind of output and input does not match.");
                 return false;
