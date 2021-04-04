@@ -39,9 +39,9 @@ namespace VirtualStudio.Client.Shared.CameraPage
             this.rtpTimestamp = rtpTimestamp;
             objRef = DotNetObjectReference.Create(this);
             handlers.Add(hubConnection.On<int, int, DataKind>(nameof(RequestSdpOffer), RequestSdpOffer));
-            handlers.Add(hubConnection.On<int, int, DataKind, string>(nameof(RequestSdpAnswer), RequestSdpAnswer));
+            handlers.Add(hubConnection.On<int, int, DataKind, string, bool>(nameof(RequestSdpAnswer), RequestSdpAnswer));
             handlers.Add(hubConnection.On<int, RtcIceCandidateInit>(nameof(AddIceCandidate), AddIceCandidate));
-            handlers.Add(hubConnection.On<int, string>(nameof(Connect), Connect));
+            handlers.Add(hubConnection.On<int, string, bool>(nameof(Connect), Connect));
             handlers.Add(hubConnection.On<int>(nameof(Disconnect), Disconnect));
         }
 
@@ -52,7 +52,7 @@ namespace VirtualStudio.Client.Shared.CameraPage
                 handler.Dispose();
         }
 
-        public async Task OpenCameraAsync(ElementReference sendingVideoElement)
+        public async Task OpenCameraAsync(ElementReference? sendingVideoElement)
         {
             await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.openCameraStream", handlerId, sendingVideoElement);
         }
@@ -69,13 +69,14 @@ namespace VirtualStudio.Client.Shared.CameraPage
             var connectionDataKind = dataKind & output.DataKind;
             if (connectionDataKind == DataKind.Nothing)
                 throw new InvalidOperationException($"DataKinds to not match.");
-            
+
+            bool supportsInsertableStreams = await jsRuntime.InvokeAsync<bool>("WebRtcHandlerManager.areInsertableStreamsSupported", handlerId);
             var sdpOffer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpOffer", handlerId, connectionId, (int)connectionDataKind, objRef);
 
             var connection = new Connection { Id = connectionId, Endpoint = output, DataKind = connectionDataKind, State = ConnectionState.Disconnected };
             connections.Add(connection);
 
-            await hubConnection.SendAsync("RespondSdpOffer", connectionId, sdpOffer);
+            await hubConnection.SendAsync("RespondSdpOffer", connectionId, sdpOffer, supportsInsertableStreams);
         }
 
         private StudioComponentEndpointDto GetInput(int inputId)
@@ -88,11 +89,12 @@ namespace VirtualStudio.Client.Shared.CameraPage
             return studioComponent.Outputs.FirstOrDefault(o => o.Id == outputId && o.ConnectionType == "WebRTC");
         }
 
-        public async Task RequestSdpAnswer(int connectionId, int endPointId, DataKind dataKind, string sdpOffer)
+        public async Task RequestSdpAnswer(int connectionId, int endPointId, DataKind dataKind, string sdpOffer, bool remotePeerSupportsInsertableStreams)
         {
             Console.WriteLine("RequestSdpAnswer");
-            var sdpAnswer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpAnswer", handlerId, connectionId, sdpOffer, receivingVideoElement, rtpTimestamp, objRef);
-            await hubConnection.SendAsync("RespondSdpAnswer", connectionId, sdpAnswer);
+            var supportsInsertableStreams = await jsRuntime.InvokeAsync<bool>("WebRtcHandlerManager.areInsertableStreamsSupported", handlerId);
+            var sdpAnswer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpAnswer", handlerId, connectionId, sdpOffer, remotePeerSupportsInsertableStreams, receivingVideoElement, rtpTimestamp, objRef);
+            await hubConnection.SendAsync("RespondSdpAnswer", connectionId, sdpAnswer, remotePeerSupportsInsertableStreams && supportsInsertableStreams);
         }
 
         public async Task AddIceCandidate(int connectionId, RtcIceCandidateInit candidateJson)
@@ -107,10 +109,10 @@ namespace VirtualStudio.Client.Shared.CameraPage
                 candidateJson.UsernameFragment);
         }
 
-        public async Task Connect(int connectionId, string sdpAnswer)
+        public async Task Connect(int connectionId, string sdpAnswer, bool useInsertableStreams)
         {
             Console.WriteLine("Connect");
-            await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.connect", handlerId, connectionId, sdpAnswer);
+            await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.connect", handlerId, connectionId, sdpAnswer, useInsertableStreams);
         }
 
         public async Task Disconnect(int connectionId)

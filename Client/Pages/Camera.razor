@@ -93,6 +93,9 @@
 
     public async ValueTask DisposeAsync()
     {
+        bool success = await hubConnection.InvokeAsync<bool>
+        ("LeaveVirtualStudio", virtualStudioName);
+
         if (webRtcManager != null)
             await webRtcManager.DisposeAsync();
 

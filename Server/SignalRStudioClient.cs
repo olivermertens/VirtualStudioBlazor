@@ -44,41 +44,43 @@ namespace VirtualStudio.Server
         }
 
         #region WebRtc
-        async Task<string> IWebRtcConnectionHandler.GetSdpOffer(IStudioConnection connection)
+        async Task<(string, bool)> IWebRtcConnectionHandler.GetSdpOffer(IStudioConnection connection)
         {
             var connectProcess = new WebRtcConnectProcess(connection);
             connectProcesses.Add(connectProcess);
             await ClientConnection.RequestSdpOffer(connection.Id, connection.Output.Id, connection.Input.DataKind);
             if (connectProcess.SdpOfferAvailableEvent.WaitOne(5000))
-                return connectProcess.SdpOffer;
+                return (connectProcess.SdpOffer, connectProcess.SenderSupportsInsertableStreams);
             else
-                return null;
+                return (null, false);
         }
-        async Task<string> IWebRtcConnectionHandler.GetSdpAnswer(IStudioConnection connection, string sdpOffer)
+        async Task<(string, bool)> IWebRtcConnectionHandler.GetSdpAnswer(IStudioConnection connection, string sdpOffer, bool remotePeerSupportsInsertableStreams)
         {
             var connectProcess = new WebRtcConnectProcess(connection);
             connectProcesses.Add(connectProcess);
-            await ClientConnection.RequestSdpAnswer(connection.Id, connection.Input.Id, connection.Output.DataKind, sdpOffer);
+            await ClientConnection.RequestSdpAnswer(connection.Id, connection.Input.Id, connection.Output.DataKind, sdpOffer, remotePeerSupportsInsertableStreams);
             if (connectProcess.SdpAnswerAvailableEvent.WaitOne(5000))
-                return connectProcess.SdpAnswer;
+                return (connectProcess.SdpAnswer, connectProcess.UseInsertableStreams);
             else
-                return null;
+                return (null, false);
         }
 
         Task IWebRtcConnectionHandler.AddIceCandidate(IStudioConnection connection, RtcIceCandidateInit candidateJson) => ClientConnection.AddIceCandidate(connection.Id, candidateJson);
-        Task IWebRtcConnectionHandler.Connect(IStudioConnection connection, string spdAnswer) => ClientConnection.Connect(connection.Id, spdAnswer);
+        Task IWebRtcConnectionHandler.Connect(IStudioConnection connection, string spdAnswer, bool useInsertableStreams) => ClientConnection.Connect(connection.Id, spdAnswer, useInsertableStreams);
         Task IWebRtcConnectionHandler.Disconnect(IStudioConnection connection) => ClientConnection.Disconnect(connection.Id);
         #endregion
 
-        public void OnSdpOfferReceived(int connectionId, string sdpOffer)
+        public void OnSdpOfferReceived(int connectionId, string sdpOffer, bool supportsInsertableStreams)
         {
             var connectionProcess = connectProcesses.First(c => c.Connection.Id == connectionId);
+            connectionProcess.SenderSupportsInsertableStreams = supportsInsertableStreams;
             connectionProcess.SetSdpOffer(sdpOffer);
         }
 
-        public void OnSdpAnswerReceived(int connectionId, string sdpAnswer)
+        public void OnSdpAnswerReceived(int connectionId, string sdpAnswer, bool useInsertableStreams)
         {
             var connectionProcess = connectProcesses.First(c => c.Connection.Id == connectionId);
+            connectionProcess.UseInsertableStreams = useInsertableStreams;
             connectionProcess.SetSdpAnswer(sdpAnswer);
         }
 

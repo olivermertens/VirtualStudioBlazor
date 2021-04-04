@@ -96,11 +96,11 @@ namespace VirtualStudio.StudioClient
                         if (e.connectionId == studioConnection.Id)
                             inputConnectionHandler.AddIceCandidate(studioConnection, e.candidateJson);
                     };
-                    string sdpOffer = await outputConnectionHandler.GetSdpOffer(studioConnection);
+                    (string sdpOffer, bool supportsInsertableStreams) = await outputConnectionHandler.GetSdpOffer(studioConnection);
                     System.Diagnostics.Debug.WriteLine("SDP Offer: " + sdpOffer);
-                    string sdpAnswer = await inputConnectionHandler.GetSdpAnswer(studioConnection, sdpOffer);
+                    (string sdpAnswer, bool useInsertableStreams) = await inputConnectionHandler.GetSdpAnswer(studioConnection, sdpOffer, supportsInsertableStreams);
                     System.Diagnostics.Debug.WriteLine("SDP Answer: " + sdpAnswer);
-                    await outputConnectionHandler.Connect(studioConnection, sdpAnswer);
+                    await outputConnectionHandler.Connect(studioConnection, sdpAnswer, useInsertableStreams);
                     break;
                 case ConnectionState.Disconnected:
                 case ConnectionState.Destroyed:

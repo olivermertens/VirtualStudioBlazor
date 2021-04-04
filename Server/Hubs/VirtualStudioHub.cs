@@ -80,14 +80,14 @@ namespace VirtualStudio.Server
         #endregion
 
         #region IWebRtcHubMethods
-        public Task RespondSdpOffer(int connectionId, string sdpOffer)
+        public Task RespondSdpOffer(int connectionId, string sdpOffer, bool supportsInsertableStreams)
         {
-            return CallOnCurrentClient(c => c.OnSdpOfferReceived(connectionId, sdpOffer));
+            return CallOnCurrentClient(c => c.OnSdpOfferReceived(connectionId, sdpOffer, supportsInsertableStreams));
         }
 
-        public Task RespondSdpAnswer(int connectionId, string sdpAnswer)
+        public Task RespondSdpAnswer(int connectionId, string sdpAnswer, bool useInsertableStreams)
         {
-            return CallOnCurrentClient(c => c.OnSdpAnswerReceived(connectionId, sdpAnswer));
+            return CallOnCurrentClient(c => c.OnSdpAnswerReceived(connectionId, sdpAnswer, useInsertableStreams));
         }
 
         public Task SendIceCandidate(int connectionId, RtcIceCandidateInit candidateJson)

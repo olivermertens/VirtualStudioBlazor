@@ -8,8 +8,8 @@ namespace VirtualStudio.Shared.Abstractions
 {
     public interface IWebRtcHubMethods
     {
-        Task RespondSdpOffer(int connectionId, string sdpOffer);
-        Task RespondSdpAnswer(int connectionId, string sdpAnswer);
+        Task RespondSdpOffer(int connectionId, string sdpOffer, bool supportsInsertableStreams);
+        Task RespondSdpAnswer(int connectionId, string sdpAnswer, bool useInsertableStreams);
         Task SendIceCandidate(int connectionId, RtcIceCandidateInit candidateJson);
     }
 }

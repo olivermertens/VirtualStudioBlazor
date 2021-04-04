@@ -13,6 +13,8 @@ namespace VirtualStudio.ConnectionTypes.WebRtc
         public string SdpAnswer { get; private set; }
         public ManualResetEvent SdpOfferAvailableEvent { get; } = new ManualResetEvent(false);
         public ManualResetEvent SdpAnswerAvailableEvent { get; } = new ManualResetEvent(false);
+        public bool SenderSupportsInsertableStreams { get; set; }
+        public bool UseInsertableStreams { get; set; }
 
         public WebRtcConnectProcess(IStudioConnection connection)
         {

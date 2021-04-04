@@ -9,9 +9,9 @@ namespace VirtualStudio.Shared.Abstractions
     public interface IWebRtcClientMethods
     {
         Task RequestSdpOffer(int connectionId, int endPointId, DataKind dataKind);
-        Task RequestSdpAnswer(int connectionId, int endPointId, DataKind dataKind, string sdpOffer);
+        Task RequestSdpAnswer(int connectionId, int endPointId, DataKind dataKind, string sdpOffer, bool remotePeerSupportsInsertableStreams);
         Task AddIceCandidate(int connectionId, RtcIceCandidateInit candidateJson);
-        Task Connect(int connectionId, string spdAnswer);
+        Task Connect(int connectionId, string spdAnswer, bool useInsertableStreams);
         Task Disconnect(int connectionId);
     }
 }
