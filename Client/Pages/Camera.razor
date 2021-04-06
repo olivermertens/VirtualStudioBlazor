@@ -1,8 +1,10 @@
 @page "/camera"
 @using Microsoft.AspNetCore.SignalR.Client
+@using System
 @using VirtualStudio.Shared.DTOs
 @using VirtualStudio.Shared
 @using VirtualStudio.Client.Shared.CameraPage
+@using VirtualStudio.Shared.Connection
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -13,12 +15,13 @@
 
 <EditForm Model="@this" OnValidSubmit="@JoinVirtualStudio">
     <div>
-        <InputText id="name" @bind-Value="virtualStudioName" />
+        <InputText id="name" @bind-Value="name" />
+        <InputText id="virtualStudioName" @bind-Value="virtualStudioName" />
         <button type="submit">Join</button>
     </div>
     <div>
         Show feedback:
-        <InputCheckbox @bind-Value="showFeedback"/>
+        <InputCheckbox @bind-Value="showFeedback" />
     </div>
 </EditForm>
 
@@ -32,9 +35,10 @@
 </div>
 
 @code {
-    private HubConnection hubConnection;
+    private SignalRVirtualStudioConnection virtualStudioConnection;
     private string connectionState = "Disconnected";
-    private string virtualStudioName;
+    private string name = "Camera";
+    private string virtualStudioName = "vs";
     private bool isTaskRunning = false;
     private bool showFeedback = false;
 
@@ -43,32 +47,25 @@
     ElementReference rtpTimestamp;
     WebRtcManager webRtcManager;
 
-
-
     StudioComponentDto studioComponentDto = new StudioComponentDto
     {
         Name = "Camera",
         IsPlaceholder = false,
         Inputs = new List<StudioComponentEndpointDto>
 {
-                new StudioComponentEndpointDto(){IOType = EndpointIOType.Input, ConnectionType = "WebRTC", DataKind = DataKind.Video, Id = 2, Name = "Feedback"}
-            },
+            new StudioComponentEndpointDto(){IOType = EndpointIOType.Input, ConnectionType = "WebRTC", DataKind = DataKind.Video, Id = 2, Name = "Feedback"}
+        },
         Outputs = new List<StudioComponentEndpointDto>
 {
-                new StudioComponentEndpointDto(){IOType = EndpointIOType.Output, ConnectionType = "WebRTC", DataKind = DataKind.VideoAudio, Id = 1, Name = "Video"}
-            }
+            new StudioComponentEndpointDto(){IOType = EndpointIOType.Output, ConnectionType = "WebRTC", DataKind = DataKind.VideoAudio, Id = 1, Name = "Video"}
+        }
     };
 
     protected override async Task OnInitializedAsync()
     {
         NavigationManager.LocationChanged += NavigationManager_LocationChanged;
-
-        hubConnection = new HubConnectionBuilder()
-        .WithUrl(NavigationManager.ToAbsoluteUri("/virtualstudio"))
-        .Build();
-
-        await hubConnection.StartAsync();
-        connectionState = hubConnection.State.ToString();
+        virtualStudioConnection = await SignalRVirtualStudioConnection.CreateAsync(NavigationManager.BaseUri);
+        connectionState = virtualStudioConnection.ConnectionState.ToString();
     }
 
     private async void NavigationManager_LocationChanged(object sender, LocationChangedEventArgs args)
@@ -84,22 +81,34 @@
         if (webRtcManager != null)
             await webRtcManager.DisposeAsync();
 
-        webRtcManager = await WebRtcManager.CreateAsync(hubConnection, studioComponentDto, JS, receivingVideoElement, rtpTimestamp);
+        studioComponentDto = new StudioComponentDto
+        {
+            Name = !string.IsNullOrWhiteSpace(name) ? name : "Camera",
+            IsPlaceholder = false,
+            Inputs = new List<StudioComponentEndpointDto>
+            {
+                new StudioComponentEndpointDto(){IOType = EndpointIOType.Input, ConnectionType = "WebRTC", DataKind = DataKind.Video, Id = 2, Name = "Feedback"}
+            },
+            Outputs = new List<StudioComponentEndpointDto>
+            {
+            new StudioComponentEndpointDto(){IOType = EndpointIOType.Output, ConnectionType = "WebRTC", DataKind = DataKind.VideoAudio, Id = 1, Name = "Video"}
+            }
+        };
+
+        webRtcManager = await WebRtcManager.CreateAsync(virtualStudioConnection, studioComponentDto, JS, receivingVideoElement, rtpTimestamp);
         await webRtcManager.OpenCameraAsync(sendingVideoElement);
 
-        bool success = await hubConnection.InvokeAsync<bool>
-        ("JoinVirtualStudio", virtualStudioName, studioComponentDto);
+        await virtualStudioConnection.JoinVirtualStudio(virtualStudioName, studioComponentDto);
     }
 
     public async ValueTask DisposeAsync()
     {
-        bool success = await hubConnection.InvokeAsync<bool>
-        ("LeaveVirtualStudio", virtualStudioName);
+        await virtualStudioConnection.LeaveVirtualStudio(virtualStudioName);
 
         if (webRtcManager != null)
             await webRtcManager.DisposeAsync();
 
-        await hubConnection.DisposeAsync();
+        await virtualStudioConnection.DisposeAsync();
         NavigationManager.LocationChanged -= NavigationManager_LocationChanged;
     }
 }

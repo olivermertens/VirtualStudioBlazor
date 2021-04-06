@@ -18,6 +18,16 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
+    <Folder Include="Certificate\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Certificate\virtualstudiotest.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Certificate\virtualstudiotext.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 

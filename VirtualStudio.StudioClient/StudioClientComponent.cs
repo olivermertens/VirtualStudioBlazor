@@ -88,13 +88,13 @@ namespace VirtualStudio.StudioClient
                 case ConnectionState.Connected:
                     inputConnectionHandler.IceCandidateReceived += (s, e) =>
                     {
-                        if (e.connectionId == studioConnection.Id)
-                            outputConnectionHandler.AddIceCandidate(studioConnection, e.candidateJson);
+                        if (e.ConnectionId == studioConnection.Id)
+                            outputConnectionHandler.AddIceCandidate(studioConnection, e.CandidateDto);
                     };
                     outputConnectionHandler.IceCandidateReceived += (s, e) =>
                     {
-                        if (e.connectionId == studioConnection.Id)
-                            inputConnectionHandler.AddIceCandidate(studioConnection, e.candidateJson);
+                        if (e.ConnectionId == studioConnection.Id)
+                            inputConnectionHandler.AddIceCandidate(studioConnection, e.CandidateDto);
                     };
                     (string sdpOffer, bool supportsInsertableStreams) = await outputConnectionHandler.GetSdpOffer(studioConnection);
                     System.Diagnostics.Debug.WriteLine("SDP Offer: " + sdpOffer);

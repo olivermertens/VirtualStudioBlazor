@@ -8,6 +8,7 @@ using VirtualStudio.Core.Abstractions;
 using VirtualStudio.Shared;
 using VirtualStudio.Shared.Abstractions;
 using VirtualStudio.Shared.DTOs;
+using VirtualStudio.Shared.DTOs.WebRtc;
 using VirtualStudio.StudioClient;
 
 namespace VirtualStudio.Server
@@ -21,7 +22,7 @@ namespace VirtualStudio.Server
         public event EventHandler<StudioComponentEndpointDto> OutputAdded;
         public event EventHandler<int> OutputRemoved;
         public event EventHandler<(string propertyName, object value)> PropertyChanged;
-        public event EventHandler<(int, RtcIceCandidateInit)> IceCandidateReceived;
+        public event EventHandler<IceCandidateArgs> IceCandidateReceived;
 
         public StudioClientComponent StudioComponent { get; }
         public string VirtualStudioName { get; }
@@ -30,9 +31,9 @@ namespace VirtualStudio.Server
         private readonly VirtualStudioClientProvider signalRClientProvider;
         private List<WebRtcConnectProcess> connectProcesses = new List<WebRtcConnectProcess>();
 
-        private IWebRtcClientMethods ClientConnection => signalRClientProvider.GetSignalRClient(connectionId);
+        private IWebRtcClient ClientConnection => signalRClientProvider.GetSignalRClient(connectionId);
 
-        public SignalRStudioClient(string virtualStudioName, string connectionId, VirtualStudioClientProvider signalRClientProvider, StudioComponentDto studioComponentDto) 
+        public SignalRStudioClient(string virtualStudioName, string connectionId, VirtualStudioClientProvider signalRClientProvider, StudioComponentDto studioComponentDto)
         {
             this.connectionId = connectionId;
             this.signalRClientProvider = signalRClientProvider;
@@ -48,7 +49,12 @@ namespace VirtualStudio.Server
         {
             var connectProcess = new WebRtcConnectProcess(connection);
             connectProcesses.Add(connectProcess);
-            await ClientConnection.RequestSdpOffer(connection.Id, connection.Output.Id, connection.Input.DataKind);
+            await ClientConnection.RequestSdpOffer(new SdpOfferRequestArgs
+            {
+                ConnectionId = connection.Id,
+                EndPointId = connection.Output.Id,
+                DataKind = connection.Input.DataKind
+            });
             if (connectProcess.SdpOfferAvailableEvent.WaitOne(5000))
                 return (connectProcess.SdpOffer, connectProcess.SenderSupportsInsertableStreams);
             else
@@ -58,35 +64,45 @@ namespace VirtualStudio.Server
         {
             var connectProcess = new WebRtcConnectProcess(connection);
             connectProcesses.Add(connectProcess);
-            await ClientConnection.RequestSdpAnswer(connection.Id, connection.Input.Id, connection.Output.DataKind, sdpOffer, remotePeerSupportsInsertableStreams);
+            await ClientConnection.RequestSdpAnswer(new SdpAnswerRequestArgs
+            {
+                ConnectionId = connection.Id,
+                EndPointId = connection.Input.Id,
+                DataKind = connection.Output.DataKind,
+                SdpOffer = sdpOffer,
+                RemotePeerSupportsInsertableStreams = remotePeerSupportsInsertableStreams
+            });
             if (connectProcess.SdpAnswerAvailableEvent.WaitOne(5000))
                 return (connectProcess.SdpAnswer, connectProcess.UseInsertableStreams);
             else
                 return (null, false);
         }
 
-        Task IWebRtcConnectionHandler.AddIceCandidate(IStudioConnection connection, RtcIceCandidateInit candidateJson) => ClientConnection.AddIceCandidate(connection.Id, candidateJson);
-        Task IWebRtcConnectionHandler.Connect(IStudioConnection connection, string spdAnswer, bool useInsertableStreams) => ClientConnection.Connect(connection.Id, spdAnswer, useInsertableStreams);
-        Task IWebRtcConnectionHandler.Disconnect(IStudioConnection connection) => ClientConnection.Disconnect(connection.Id);
+        Task IWebRtcConnectionHandler.AddIceCandidate(IStudioConnection connection, RtcIceCandidateDto candidateDto)
+            => ClientConnection.AddIceCandidate(new IceCandidateArgs { ConnectionId = connection.Id, CandidateDto = candidateDto });
+        Task IWebRtcConnectionHandler.Connect(IStudioConnection connection, string spdAnswer, bool useInsertableStreams)
+            => ClientConnection.Connect(new ConnectWebRtcCommandArgs { ConnectionId = connection.Id, SdpAnswer = spdAnswer, UseInsertableStreams = useInsertableStreams });
+        Task IWebRtcConnectionHandler.Disconnect(IStudioConnection connection)
+            => ClientConnection.Disconnect(new DisconnectWebRtcCommandArgs { ConnectionId = connection.Id });
         #endregion
 
-        public void OnSdpOfferReceived(int connectionId, string sdpOffer, bool supportsInsertableStreams)
+        public void OnSdpOfferReceived(SdpOfferResponseArgs args)
         {
-            var connectionProcess = connectProcesses.First(c => c.Connection.Id == connectionId);
-            connectionProcess.SenderSupportsInsertableStreams = supportsInsertableStreams;
-            connectionProcess.SetSdpOffer(sdpOffer);
+            var connectionProcess = connectProcesses.First(c => c.Connection.Id == args.ConnectionId);
+            connectionProcess.SenderSupportsInsertableStreams = args.SupportsInsertableStreams;
+            connectionProcess.SetSdpOffer(args.SdpOffer);
         }
 
-        public void OnSdpAnswerReceived(int connectionId, string sdpAnswer, bool useInsertableStreams)
+        public void OnSdpAnswerReceived(SdpAnswerResponseArgs args)
         {
-            var connectionProcess = connectProcesses.First(c => c.Connection.Id == connectionId);
-            connectionProcess.UseInsertableStreams = useInsertableStreams;
-            connectionProcess.SetSdpAnswer(sdpAnswer);
+            var connectionProcess = connectProcesses.First(c => c.Connection.Id == args.ConnectionId);
+            connectionProcess.UseInsertableStreams = args.UseInsertableStreams;
+            connectionProcess.SetSdpAnswer(args.SdpAnswer);
         }
 
-        public void OnIceCandidateReceived(int connectionId, RtcIceCandidateInit candidateJson)
+        public void OnIceCandidateReceived(IceCandidateArgs args)
         {
-            IceCandidateReceived?.Invoke(this, (connectionId, candidateJson));
+            IceCandidateReceived?.Invoke(this, args);
         }
 
         #region EventInvocation

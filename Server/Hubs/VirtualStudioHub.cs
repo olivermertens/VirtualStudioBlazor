@@ -8,11 +8,12 @@ using VirtualStudio.Core;
 using VirtualStudio.Shared;
 using VirtualStudio.Shared.Abstractions;
 using VirtualStudio.Shared.DTOs;
+using VirtualStudio.Shared.DTOs.WebRtc;
 using VirtualStudio.StudioClient;
 
 namespace VirtualStudio.Server
 {
-    public class VirtualStudioHub : Hub<IWebRtcClientMethods>, IStudioClientUpdater, IWebRtcHubMethods
+    public class VirtualStudioHub : Hub<IWebRtcClient>, IStudioClientUpdater, IWebRtcSignalingServer
     {
         static ConcurrentDictionary<string, string> connectionIdToGroupMapping = new ConcurrentDictionary<string, string>();
         static ConcurrentDictionary<string, SignalRStudioClient> connectionIdToStudioClientMapping = new ConcurrentDictionary<string, SignalRStudioClient>();
@@ -79,20 +80,20 @@ namespace VirtualStudio.Server
 
         #endregion
 
-        #region IWebRtcHubMethods
-        public Task RespondSdpOffer(int connectionId, string sdpOffer, bool supportsInsertableStreams)
+        #region IWebRtcSignalingServer
+        public Task SendSdpOffer(SdpOfferResponseArgs args)
         {
-            return CallOnCurrentClient(c => c.OnSdpOfferReceived(connectionId, sdpOffer, supportsInsertableStreams));
+            return CallOnCurrentClient(c => c.OnSdpOfferReceived(args));
         }
 
-        public Task RespondSdpAnswer(int connectionId, string sdpAnswer, bool useInsertableStreams)
+        public Task SendSdpAnswer(SdpAnswerResponseArgs args)
         {
-            return CallOnCurrentClient(c => c.OnSdpAnswerReceived(connectionId, sdpAnswer, useInsertableStreams));
+            return CallOnCurrentClient(c => c.OnSdpAnswerReceived(args));
         }
 
-        public Task SendIceCandidate(int connectionId, RtcIceCandidateInit candidateJson)
+        public Task SendIceCandidate(IceCandidateArgs args)
         {
-            return CallOnCurrentClient(c => c.OnIceCandidateReceived(connectionId, candidateJson));
+            return CallOnCurrentClient(c => c.OnIceCandidateReceived(args));
         }
 
         #endregion

@@ -148,7 +148,10 @@ class WebRtcHandler {
         rtcPeerConnection.onicecandidate = iceEvent => this.dotNetInvokeOnIceCandidate(objRef, iceEvent, connectionId);
         rtcPeerConnection.ontrack = (e) => {
             console.log("Set remote stream.");
-            videoElement.srcObject = e.streams[0];
+            let stream = e.streams.find((s) => s.getTracks().find(t => t == e.track));
+            if (stream == null)
+                stream = new MediaStream([e.track]);
+            videoElement.srcObject = stream;
             const config = rtcPeerConnection.getConfiguration();
             // @ts-ignore
             if (useInsertableStreams) {
@@ -266,7 +269,6 @@ class WebRtcHandler {
             objRef.invokeMethodAsync("OnIceCandidate", connectionId, json.candidate, json.sdpMid, json.sdpMLineIndex, json.usernameFragment);
         else {
             console.log("End of ice candidates");
-            objRef.invokeMethodAsync("OnIceCandidate", connectionId, null, null, 0, null);
         }
     }
 }

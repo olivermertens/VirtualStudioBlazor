@@ -11,14 +11,14 @@ namespace VirtualStudio.Server
 {
     public class VirtualStudioClientProvider
     {
-        IHubContext<VirtualStudioHub, IWebRtcClientMethods> virtualStudioHubContext;
+        IHubContext<VirtualStudioHub, IWebRtcClient> virtualStudioHubContext;
 
-        public VirtualStudioClientProvider(IHubContext<VirtualStudioHub, IWebRtcClientMethods> virtualStudioHubContext)
+        public VirtualStudioClientProvider(IHubContext<VirtualStudioHub, IWebRtcClient> virtualStudioHubContext)
         {
             this.virtualStudioHubContext = virtualStudioHubContext;
         }
 
-        public IWebRtcClientMethods GetSignalRClient(string connectionId)
+        public IWebRtcClient GetSignalRClient(string connectionId)
         {
             return virtualStudioHubContext.Clients.Client(connectionId);
         }

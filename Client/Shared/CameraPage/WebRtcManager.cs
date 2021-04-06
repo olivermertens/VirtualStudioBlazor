@@ -8,14 +8,15 @@ using System.Threading.Tasks;
 using VirtualStudio.Shared;
 using VirtualStudio.Shared.Abstractions;
 using VirtualStudio.Shared.DTOs;
+using VirtualStudio.Shared.DTOs.WebRtc;
 
 namespace VirtualStudio.Client.Shared.CameraPage
 {
-    public class WebRtcManager : IWebRtcClientMethods, IAsyncDisposable
+    public class WebRtcManager : IWebRtcClient, IAsyncDisposable
     {
         private readonly IJSRuntime jsRuntime;
         private readonly DotNetObjectReference<WebRtcManager> objRef;
-        private readonly HubConnection hubConnection;
+        private readonly IVirtualStudioConnection virtualStudioConnection;
         private readonly List<IDisposable> handlers = new List<IDisposable>();
         private readonly StudioComponentDto studioComponent;
         private readonly List<Connection> connections = new List<Connection>();
@@ -23,33 +24,31 @@ namespace VirtualStudio.Client.Shared.CameraPage
         private readonly ElementReference rtpTimestamp;
         private int handlerId;
 
-        public static async Task<WebRtcManager> CreateAsync(HubConnection hubConnection, StudioComponentDto studioComponent, IJSRuntime jsRuntime, ElementReference receivingVideoElement, ElementReference rtpTimestamp)
+        public static async Task<WebRtcManager> CreateAsync(IVirtualStudioConnection virtualStudioConnection, StudioComponentDto studioComponent, IJSRuntime jsRuntime, ElementReference receivingVideoElement, ElementReference rtpTimestamp)
         {
-            var manager = new WebRtcManager(hubConnection, studioComponent, jsRuntime, receivingVideoElement, rtpTimestamp);
+            var manager = new WebRtcManager(virtualStudioConnection, studioComponent, jsRuntime, receivingVideoElement, rtpTimestamp);
             manager.handlerId = await jsRuntime.InvokeAsync<int>("WebRtcHandlerManager.createHandler");
             return manager;
         }
 
-        private WebRtcManager(HubConnection hubConnection, StudioComponentDto studioComponent, IJSRuntime jsRuntime, ElementReference receivingVideoElement, ElementReference rtpTimestamp)
+        private WebRtcManager(IVirtualStudioConnection virtualStudioConnection, StudioComponentDto studioComponent, IJSRuntime jsRuntime, ElementReference receivingVideoElement, ElementReference rtpTimestamp)
         {
             this.studioComponent = studioComponent;
-            this.hubConnection = hubConnection;
+            this.virtualStudioConnection = virtualStudioConnection;
             this.jsRuntime = jsRuntime;
             this.receivingVideoElement = receivingVideoElement;
             this.rtpTimestamp = rtpTimestamp;
             objRef = DotNetObjectReference.Create(this);
-            handlers.Add(hubConnection.On<int, int, DataKind>(nameof(RequestSdpOffer), RequestSdpOffer));
-            handlers.Add(hubConnection.On<int, int, DataKind, string, bool>(nameof(RequestSdpAnswer), RequestSdpAnswer));
-            handlers.Add(hubConnection.On<int, RtcIceCandidateInit>(nameof(AddIceCandidate), AddIceCandidate));
-            handlers.Add(hubConnection.On<int, string, bool>(nameof(Connect), Connect));
-            handlers.Add(hubConnection.On<int>(nameof(Disconnect), Disconnect));
+            virtualStudioConnection.AddListener(this);
         }
 
         public async ValueTask DisposeAsync()
         {
             await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.disposeHandler", handlerId);
+            virtualStudioConnection.RemoveListener(this);
             foreach (var handler in handlers)
                 handler.Dispose();
+            objRef.Dispose();
         }
 
         public async Task OpenCameraAsync(ElementReference? sendingVideoElement)
@@ -59,24 +58,29 @@ namespace VirtualStudio.Client.Shared.CameraPage
 
 
         #region HubConnectionEventHandlers
-        public async Task RequestSdpOffer(int connectionId, int endPointId, DataKind dataKind)
+        public async Task RequestSdpOffer(SdpOfferRequestArgs args)
         {
             Console.WriteLine("RequestSdpOffer");
-            var output = GetOutput(endPointId);
+            var output = GetOutput(args.EndPointId);
             if (output is null)
-                throw new InvalidOperationException($"Output with ID {endPointId} and ConnectionType 'WebRTC' does not exist.");
+                throw new InvalidOperationException($"Output with ID {args.EndPointId} and ConnectionType 'WebRTC' does not exist.");
 
-            var connectionDataKind = dataKind & output.DataKind;
+            var connectionDataKind = args.DataKind & output.DataKind;
             if (connectionDataKind == DataKind.Nothing)
                 throw new InvalidOperationException($"DataKinds to not match.");
 
             bool supportsInsertableStreams = await jsRuntime.InvokeAsync<bool>("WebRtcHandlerManager.areInsertableStreamsSupported", handlerId);
-            var sdpOffer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpOffer", handlerId, connectionId, (int)connectionDataKind, objRef);
+            var sdpOffer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpOffer", handlerId, args.ConnectionId, (int)connectionDataKind, objRef);
 
-            var connection = new Connection { Id = connectionId, Endpoint = output, DataKind = connectionDataKind, State = ConnectionState.Disconnected };
+            var connection = new Connection { Id = args.ConnectionId, Endpoint = output, DataKind = connectionDataKind, State = ConnectionState.Disconnected };
             connections.Add(connection);
 
-            await hubConnection.SendAsync("RespondSdpOffer", connectionId, sdpOffer, supportsInsertableStreams);
+            await virtualStudioConnection.SendSdpOffer(new SdpOfferResponseArgs
+            {
+                ConnectionId = args.ConnectionId,
+                SdpOffer = sdpOffer,
+                SupportsInsertableStreams = supportsInsertableStreams
+            });
         }
 
         private StudioComponentEndpointDto GetInput(int inputId)
@@ -89,36 +93,41 @@ namespace VirtualStudio.Client.Shared.CameraPage
             return studioComponent.Outputs.FirstOrDefault(o => o.Id == outputId && o.ConnectionType == "WebRTC");
         }
 
-        public async Task RequestSdpAnswer(int connectionId, int endPointId, DataKind dataKind, string sdpOffer, bool remotePeerSupportsInsertableStreams)
+        public async Task RequestSdpAnswer(SdpAnswerRequestArgs args)
         {
             Console.WriteLine("RequestSdpAnswer");
             var supportsInsertableStreams = await jsRuntime.InvokeAsync<bool>("WebRtcHandlerManager.areInsertableStreamsSupported", handlerId);
-            var sdpAnswer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpAnswer", handlerId, connectionId, sdpOffer, remotePeerSupportsInsertableStreams, receivingVideoElement, rtpTimestamp, objRef);
-            await hubConnection.SendAsync("RespondSdpAnswer", connectionId, sdpAnswer, remotePeerSupportsInsertableStreams && supportsInsertableStreams);
+            var sdpAnswer = await jsRuntime.InvokeAsync<string>("WebRtcHandlerManager.getSdpAnswer", handlerId, args.ConnectionId, args.SdpOffer, args.RemotePeerSupportsInsertableStreams, receivingVideoElement, rtpTimestamp, objRef);
+            await virtualStudioConnection.SendSdpAnswer(new SdpAnswerResponseArgs
+            {
+                ConnectionId = args.ConnectionId,
+                SdpAnswer = sdpAnswer,
+                UseInsertableStreams = args.RemotePeerSupportsInsertableStreams && supportsInsertableStreams
+            });
         }
 
-        public async Task AddIceCandidate(int connectionId, RtcIceCandidateInit candidateJson)
+        public async Task AddIceCandidate(IceCandidateArgs args)
         {
-            Console.WriteLine("AddIceCandidate: " + candidateJson.Candidate);
+            Console.WriteLine("AddIceCandidate: " + args.CandidateDto.Candidate);
             await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.addIceCandidate",
                 handlerId,
-                connectionId,
-                candidateJson.Candidate,
-                candidateJson.SdpMid,
-                candidateJson.SdpMLineIndex,
-                candidateJson.UsernameFragment);
+                args.ConnectionId,
+                args.CandidateDto.Candidate,
+                args.CandidateDto.SdpMid,
+                args.CandidateDto.SdpMLineIndex,
+                args.CandidateDto.UsernameFragment);
         }
 
-        public async Task Connect(int connectionId, string sdpAnswer, bool useInsertableStreams)
+        public async Task Connect(ConnectWebRtcCommandArgs args)
         {
             Console.WriteLine("Connect");
-            await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.connect", handlerId, connectionId, sdpAnswer, useInsertableStreams);
+            await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.connect", handlerId, args.ConnectionId, args.SdpAnswer, args.UseInsertableStreams);
         }
 
-        public async Task Disconnect(int connectionId)
+        public async Task Disconnect(DisconnectWebRtcCommandArgs args)
         {
             Console.WriteLine("Disconnect");
-            await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.disconnect", handlerId, connectionId);
+            await jsRuntime.InvokeVoidAsync("WebRtcHandlerManager.disconnect", handlerId, args.ConnectionId);
         }
 
         private ConnectionState ParseConnectionState(string connectionState)
@@ -140,16 +149,20 @@ namespace VirtualStudio.Client.Shared.CameraPage
         public async void OnIceCandidate(int connectionId, string candidate, string sdpMid, int sdpMLineIndex, string usernameFragement)
         {
             Console.WriteLine("OnIceCandidate: " + candidate);
-            await hubConnection.SendAsync("SendIceCandidate", connectionId, new RtcIceCandidateInit(candidate, sdpMid, sdpMLineIndex, usernameFragement));
+            await virtualStudioConnection.SendIceCandidate(new IceCandidateArgs
+            {
+                ConnectionId = connectionId,
+                CandidateDto = new RtcIceCandidateDto(candidate, sdpMid, sdpMLineIndex, usernameFragement)
+            });
         }
 
         [JSInvokable]
         public async void OnConnectionStateChanged(int connectionId, bool isInput, string connectionState)
-        {
+        { 
             if (isInput)
-                await hubConnection.SendAsync("UpdateInputConnectionState", 1, connectionId, ParseConnectionState(connectionState));
+                await virtualStudioConnection.UpdateInputConnectionState(1, connectionId, ParseConnectionState(connectionState));
             else
-                await hubConnection.SendAsync("UpdateOutputConnectionState", 2, connectionId, ParseConnectionState(connectionState));
+                await virtualStudioConnection.UpdateOutputConnectionState(2, connectionId, ParseConnectionState(connectionState));
         }
         #endregion
 
