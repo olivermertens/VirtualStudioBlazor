@@ -33,6 +33,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtualStudio.StudioClient"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualStudio.ArCamera.Android", "VirtualStudio.ArCamera.Android\VirtualStudio.ArCamera.Android.csproj", "{D5EBF494-5427-4ACC-8C7A-F75E91FE24C1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavaGL", "JavaGL\JavaGL.csproj", "{7B372CCE-4D08-4562-9B71-A36295CD14A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.ARCore", "ARCore\Google.ARCore.csproj", "{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -205,6 +209,30 @@ Global
 		{D5EBF494-5427-4ACC-8C7A-F75E91FE24C1}.Release|x86.ActiveCfg = Release|Any CPU
 		{D5EBF494-5427-4ACC-8C7A-F75E91FE24C1}.Release|x86.Build.0 = Release|Any CPU
 		{D5EBF494-5427-4ACC-8C7A-F75E91FE24C1}.Release|x86.Deploy.0 = Release|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Debug|x64.Build.0 = Debug|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Debug|x86.Build.0 = Debug|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Release|x64.ActiveCfg = Release|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Release|x64.Build.0 = Release|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Release|x86.ActiveCfg = Release|Any CPU
+		{7B372CCE-4D08-4562-9B71-A36295CD14A0}.Release|x86.Build.0 = Release|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Debug|x64.Build.0 = Debug|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Debug|x86.Build.0 = Debug|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Release|x64.ActiveCfg = Release|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Release|x64.Build.0 = Release|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Release|x86.ActiveCfg = Release|Any CPU
+		{7A6A4B6E-83DA-47ED-ADE2-7674011CE5D3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

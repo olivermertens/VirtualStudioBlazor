@@ -1,4 +1,9 @@
 ﻿using Android.Content;
+using Android.Graphics;
+using Android.Hardware.Camera2;
+using Android.Opengl;
+using Android.OS;
+using Java.Lang;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +12,7 @@ using System.Threading.Tasks;
 using Xam.WebRtc.Android;
 using Xamarin.Essentials;
 
-namespace VirtualStudio.ArCamera.Android.Code
+namespace VirtualStudio.ArCamera
 {
     public interface IWebRtcObserver
     {
@@ -40,6 +45,9 @@ namespace VirtualStudio.ArCamera.Android.Code
         private readonly object _connectionLock = new object();
         private PeerConnection _peerConnection;
         private DataChannel _dataChannel;
+        private int framebufferId;
+        private int textureId;
+
 
         private (PeerConnection peer, DataChannel data) _connection
         {
@@ -66,7 +74,8 @@ namespace VirtualStudio.ArCamera.Android.Code
             Context context,
             SurfaceViewRenderer remoteView,
             SurfaceViewRenderer localView,
-            IWebRtcObserver observer)
+            IWebRtcObserver observer,
+            IImageSource imageSource)
         {
             _context = context;
             _remoteView = remoteView;
@@ -94,30 +103,30 @@ namespace VirtualStudio.ArCamera.Android.Code
                 .SetOptions(new PeerConnectionFactory.Options())
                 .CreatePeerConnectionFactory();
 
-            InitView(_localView);
-            InitView(_remoteView);
+            MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                InitView(_localView);
+                InitView(_remoteView);
+            });
 
-            var cameraEnum = new Camera2Enumerator(_context);
-            var deviceNames = cameraEnum.GetDeviceNames();
-            var cameraName = deviceNames.First(dn => DeviceInfo.DeviceType == DeviceType.Virtual
-                ? cameraEnum.IsBackFacing(dn)
-                : cameraEnum.IsFrontFacing(dn));
-            var videoCapturer = cameraEnum.CreateCapturer(cameraName, null);
+            //surfaceTexture.UpdateTexImage();
 
             var localVideoSource = _peerConnectionFactory.CreateVideoSource(false);
-            var surfaceTextureHelper = SurfaceTextureHelper.Create(
-                Java.Lang.Thread.CurrentThread().Name,
-                _eglBase.EglBaseContext);
+            string threadName = Thread.CurrentThread().Name;
 
-            videoCapturer.Initialize(surfaceTextureHelper, _context, localVideoSource.CapturerObserver);
+            var surfaceTextureHelper = SurfaceTextureHelper.Create(threadName, _eglBase.EglBaseContext);
+
+            var videoCapturer = new ImageCapturer(surfaceTextureHelper, localVideoSource.CapturerObserver, imageSource);
+
             videoCapturer.StartCapture(640, 480, 30);
 
             _localVideoTrack = _peerConnectionFactory.CreateVideoTrack("video0", localVideoSource);
             _localVideoTrack.AddSink(_localView);
 
             var localAudioSource = _peerConnectionFactory.CreateAudioSource(new MediaConstraints());
-            _localAudioTrack = _peerConnectionFactory.CreateAudioTrack("audio0", localAudioSource);
+            _localAudioTrack = _peerConnectionFactory.CreateAudioTrack("audio0", localAudioSource);    
         }
+
 
         public void Connect(Action<SessionDescription, string> completionHandler)
         {
@@ -231,7 +240,7 @@ namespace VirtualStudio.ArCamera.Android.Code
 
         private void InitView(SurfaceViewRenderer view)
         {
-            view.SetMirror(true);
+            view.SetMirror(false);
             view.SetEnableHardwareScaler(true);
             view.Init(_eglBase.EglBaseContext, null);
         }

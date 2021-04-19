@@ -1,0 +1,25 @@
+﻿precision mediump float;
+varying vec2 tc;
+
+uniform sampler2D y_tex;
+uniform sampler2D u_tex;
+uniform sampler2D v_tex;
+
+vec4 sample(vec2 p) {
+	float y = texture2D(y_tex, p).r * 1.16438;
+	float u = texture2D(u_tex, p).r;
+	float v = texture2D(v_tex, p).r;
+	return vec4(y + 1.59603 * v - 0.874202,
+		y - 0.391762 * u - 0.812968 * v + 0.531668,
+		y + 2.01723 * u - 1.08563, 1);
+}
+
+uniform vec2 xUnit;
+uniform vec4 coeffs;
+
+void main() {
+	gl_FragColor.r = coeffs.a + dot(coeffs.rgb, sample(tc - 1.5 * xUnit).rgb);
+	gl_FragColor.g = coeffs.a + dot(coeffs.rgb, sample(tc - 0.5 * xUnit).rgb);
+	gl_FragColor.b = coeffs.a + dot(coeffs.rgb, sample(tc + 0.5 * xUnit).rgb);
+	gl_FragColor.a = coeffs.a + dot(coeffs.rgb, sample(tc + 1.5 * xUnit).rgb);
+}

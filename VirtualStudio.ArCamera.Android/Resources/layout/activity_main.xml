@@ -5,19 +5,26 @@
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:rowCount="2"
+	android:rowCount="3"
 	android:columnCount="1"
-	android:orientation="vertical"
-	>
+	android:background="@android:color/holo_blue_dark">
 
 	<org.webrtc.SurfaceViewRenderer
 		android:id="@+id/local_video_surface"
 		android:layout_margin="5px"
 		android:layout_width="match_parent"
-		android:layout_height="500px"/>
+		android:layout_height="10px"
+		android:layout_rowWeight="0"/>
 	<org.webrtc.SurfaceViewRenderer
 		android:id="@+id/remote_video_surface"
 		android:layout_margin="5px"
 		android:layout_width="match_parent"
-		android:layout_height="500px"/>
+		android:layout_height="0px"
+		android:layout_rowWeight="0"/>
+	<android.opengl.GLSurfaceView
+		android:id="@+id/surfaceview"
+		android:layout_margin="5px"
+		android:layout_width="1280px"
+		android:layout_height="720px"	
+		android:layout_rowWeight="0"/>
 </GridLayout>

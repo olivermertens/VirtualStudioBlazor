@@ -10,7 +10,7 @@
     <TemplateGuid>{122416d6-6b49-4ee2-a1e8-b825f31c79fe}</TemplateGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VirtualStudio.ArCamera.Android</RootNamespace>
+    <RootNamespace>VirtualStudio.ArCamera</RootNamespace>
     <AssemblyName>VirtualStudio.ArCamera.Android</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <Deterministic>True</Deterministic>
@@ -38,6 +38,10 @@
     <AndroidUseSharedRuntime>True</AndroidUseSharedRuntime>
     <AndroidLinkMode>None</AndroidLinkMode>
     <EmbedAssembliesIntoApk>False</EmbedAssembliesIntoApk>
+    <AotAssemblies>false</AotAssemblies>
+    <EnableLLVM>false</EnableLLVM>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <BundleAssemblies>false</BundleAssemblies>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -61,16 +65,33 @@
     <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Code\BackgroundRenderer.cs" />
+    <Compile Include="Code\ImageCapturer.cs" />
+    <Compile Include="Code\ObjectRenderer.cs" />
+    <Compile Include="Code\PlaneRenderer.cs" />
+    <Compile Include="Code\PointCloudRenderer.cs" />
     <Compile Include="Code\SdpObserver.cs" />
+    <Compile Include="Code\ShaderUtil.cs" />
     <Compile Include="Code\WebRtcClient.cs" />
+    <Compile Include="DisplayRotationHelper.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <AndroidAsset Include="Assets\andy.obj" />
+    <AndroidAsset Include="Assets\andy_shadow.obj" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />
+    <AndroidResource Include="Resources\raw\screenquad_fragment_oes.shader" />
+    <AndroidResource Include="Resources\raw\screenquad_vertex.shader" />
+    <AndroidResource Include="Resources\raw\object_fragment.shader" />
+    <AndroidResource Include="Resources\raw\object_vertex.shader" />
+    <AndroidResource Include="Resources\raw\passthrough_fragment.shader" />
+    <AndroidResource Include="Resources\raw\point_cloud_vertex.shader" />
+    <AndroidResource Include="Resources\raw\plane_fragment.shader" />
+    <AndroidResource Include="Resources\raw\plane_vertex.shader" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\activity_main.xml">
@@ -114,8 +135,15 @@
     <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.2.0.5" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.0.0.1" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
+    <PackageReference Include="Xamarin.Google.ARCore">
+      <Version>1.16.0</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\JavaGL\JavaGL.csproj">
+      <Project>{7b372cce-4d08-4562-9b71-a36295cd14a0}</Project>
+      <Name>JavaGL</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Shared\VirtualStudio.Shared.csproj">
       <Project>{d06a52a9-6ce9-4753-9ed5-eb0355b708e1}</Project>
       <Name>VirtualStudio.Shared</Name>
@@ -124,6 +152,18 @@
       <Project>{864a526f-5d39-4648-836b-f359820751a2}</Project>
       <Name>VirtualStudio.ViewModels</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\andy.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\andy_shadow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\trigrid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\raw\rgba_to_yuv420_fragment.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

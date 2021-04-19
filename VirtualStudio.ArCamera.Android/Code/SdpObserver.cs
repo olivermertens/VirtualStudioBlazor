@@ -1,7 +1,7 @@
 ﻿using System;
 using Xam.WebRtc.Android;
 
-namespace VirtualStudio.ArCamera.Android.Code
+namespace VirtualStudio.ArCamera
 {
     public class SdpObserver : Java.Lang.Object, ISdpObserver
     {
