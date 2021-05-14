@@ -175,10 +175,18 @@ class WebRtcHandler {
         rtcPeerConnection.onconnectionstatechange = () => this.dotNetInvokeOnConnectionStateChanged(objRef, connectionId, true, rtcPeerConnection.connectionState);
         rtcPeerConnection.onicecandidate = iceEvent => this.dotNetInvokeOnIceCandidate(objRef, iceEvent, connectionId);
 
+        rtcPeerConnection.ondatachannel = dataChannelEvent => {
+            console.log("ondatachannel");
+            dataChannelEvent.channel.onopen = e => console.log("datachannel open");
+            dataChannelEvent.channel.onclose = e => console.log("datachannel closed");
+            dataChannelEvent.channel.onmessage = messageEvent => console.log("datachannel message");
+            dataChannelEvent.channel.onerror = errorEvent => console.log("datachannel error: " + errorEvent.error);
+        };
+
         rtcPeerConnection.ontrack = (e) => {
             console.log("Set remote stream.");
             let stream = e.streams.find((s) => s.getTracks().find(t => t == e.track));
-            if(stream == null)
+            if (stream == null)
                 stream = new MediaStream([e.track]);
             videoElement.srcObject = stream;
             const config = rtcPeerConnection.getConfiguration();
@@ -206,9 +214,9 @@ class WebRtcHandler {
             }
         };
 
-        const offer = new RTCSessionDescription({ sdp: sdpOffer, type: "offer" });
-        await rtcPeerConnection.setRemoteDescription(offer);
         try {
+            const offer = new RTCSessionDescription({ sdp: sdpOffer, type: "offer" });
+            await rtcPeerConnection.setRemoteDescription(offer);
             const answer = await rtcPeerConnection.createAnswer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
             await rtcPeerConnection.setLocalDescription(answer);
             this.videoInRtcPeerConnection = rtcPeerConnection;

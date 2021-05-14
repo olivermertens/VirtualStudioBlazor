@@ -33,14 +33,15 @@ using Android.Hardware.Camera2;
 using Android.Media;
 using System.Linq;
 using Java.Lang;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace VirtualStudio.ArCamera
 {
-    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize, ScreenOrientation = ScreenOrientation.Landscape)]
+    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation, ScreenOrientation = ScreenOrientation.Landscape)]
     public class MainActivity : AppCompatActivity, IWebRtcObserver, IWebRtcClient, GLSurfaceView.IRenderer, IOnTouchListener, IImageSource
     {
         const string TAG = "VIRTUALSTUDIO_ARCAMERA";
-        SurfaceViewRenderer localVideoSurface;
         SurfaceViewRenderer remoteVideoSurface;
         SignalRVirtualStudioConnection virtualStudioConnection;
         private readonly string virtualStudioName = "vs";
@@ -84,7 +85,6 @@ namespace VirtualStudio.ArCamera
             SetContentView(Resource.Layout.activity_main);
             StartArSession();
             SetupGlSurfaceView();
-            localVideoSurface = FindViewById<SurfaceViewRenderer>(Resource.Id.local_video_surface);
             remoteVideoSurface = FindViewById<SurfaceViewRenderer>(Resource.Id.remote_video_surface);
         }
 
@@ -185,10 +185,11 @@ namespace VirtualStudio.ArCamera
                 if (webRtcClient is null)
                 {
 
-                    webRtcClient = new WebRtcClient(this, remoteVideoSurface, localVideoSurface, this, this);
+                    webRtcClient = new WebRtcClient(this, remoteVideoSurface, null, this, this);
                 }
 
-                _ = ConnectToServer();
+                if(virtualStudioConnection is null || virtualStudioConnection.ConnectionState == HubConnectionState.Disconnected)
+                    _ = ConnectToServer();
             }
             else
             {
@@ -221,11 +222,6 @@ namespace VirtualStudio.ArCamera
                 Toast.MakeText(this, "Camera permission is needed to run this application", ToastLength.Long).Show();
                 Finish();
             }
-        }
-
-        private void Init()
-        {
-
         }
 
         public override void OnWindowFocusChanged(bool hasFocus)
@@ -278,7 +274,7 @@ namespace VirtualStudio.ArCamera
         {
             connectionId = args.ConnectionId;
 
-            webRtcClient.Connect((sdpOffer, error) =>
+            webRtcClient.Connect(args.ConnectionId, (sdpOffer, error) =>
             {
                 virtualStudioConnection.SendSdpOffer(new SdpOfferResponseArgs
                 {
@@ -294,7 +290,7 @@ namespace VirtualStudio.ArCamera
         {
             connectionId = args.ConnectionId;
 
-            webRtcClient.ReceiveOffer(new SessionDescription(SessionDescription.SdpType.Offer, args.SdpOffer), (sdpAnswer, error) =>
+            webRtcClient.ReceiveOffer(args.ConnectionId, new SessionDescription(SessionDescription.SdpType.Offer, args.SdpOffer), (sdpAnswer, error) =>
             {
                 virtualStudioConnection.SendSdpAnswer(new SdpAnswerResponseArgs
                 {
@@ -308,19 +304,19 @@ namespace VirtualStudio.ArCamera
 
         public Task AddIceCandidate(IceCandidateArgs args)
         {
-            webRtcClient.ReceiveCandidate(new IceCandidate(args.CandidateDto.SdpMid, args.CandidateDto.SdpMLineIndex, args.CandidateDto.Candidate));
+            webRtcClient.ReceiveCandidate(args.ConnectionId, new IceCandidate(args.CandidateDto.SdpMid, args.CandidateDto.SdpMLineIndex, args.CandidateDto.Candidate));
             return Task.CompletedTask;
         }
 
         public Task Connect(ConnectWebRtcCommandArgs args)
         {
-            webRtcClient.ReceiveAnswer(new SessionDescription(SessionDescription.SdpType.Answer, args.SdpAnswer), (sdp, error) => { });
+            webRtcClient.ReceiveAnswer(args.ConnectionId, new SessionDescription(SessionDescription.SdpType.Answer, args.SdpAnswer), (sdp, error) => { });
             return Task.CompletedTask;
         }
 
         public Task Disconnect(DisconnectWebRtcCommandArgs args)
         {
-            webRtcClient.Disconnect();
+            webRtcClient.Disconnect(args.ConnectionId);
             return Task.CompletedTask;
         }
 
@@ -379,6 +375,7 @@ namespace VirtualStudio.ArCamera
         int renderTextureId;
         int fboId;
         Android.Util.Size textureSize;
+        int counter = 0;
 
         public void OnSurfaceCreated(IGL10 gl, Javax.Microedition.Khronos.Egl.EGLConfig config)
         {
@@ -557,25 +554,39 @@ namespace VirtualStudio.ArCamera
                     }
                 }
 
-                Draw(frame, camera, projmtx, viewmtx, lightIntensity, planes);
+                // Draw(frame, camera, projmtx, viewmtx, lightIntensity, planes);
 
-                
+
                 GLES20.GlBindFramebuffer(GLES20.GlFramebuffer, fboId);
                 GLES20.GlViewport(0, 0, targetResolution.Width, targetResolution.Height);
                 // Restore the depth state for further drawing.
                 GLES20.GlDepthMask(true);
                 GLES20.GlEnable(GLES20.GlDepthTest);
                 // Draw(frame, camera, projmtx, viewmtx, lightIntensity, planes);
-                DrawModels(projmtx, viewmtx, lightIntensity);
+                // DrawModels(projmtx, viewmtx, lightIntensity);
 
 
                 if (doCaptureCameraFrame)
                 {
+                    var displayOrientedPose = camera.DisplayOrientedPose;
+                    var pose = new VirtualStudio.Shared.DTOs.Tracking.Pose
+                    {
+                        Position = new System.Numerics.Vector3(displayOrientedPose.Tx(), displayOrientedPose.Ty(), displayOrientedPose.Tz()),
+                        Orientation = new System.Numerics.Vector4(displayOrientedPose.Qx(), displayOrientedPose.Qy(), displayOrientedPose.Qz(), displayOrientedPose.Qw()),
+                        Projection = new System.Numerics.Matrix4x4(
+                            projmtx[0], projmtx[1], projmtx[2], projmtx[3],
+                            projmtx[4], projmtx[5], projmtx[6], projmtx[7],
+                            projmtx[8], projmtx[9], projmtx[10], projmtx[11],
+                            projmtx[12], projmtx[13], projmtx[14], projmtx[15]
+                        )
+                    };
+                    webRtcClient.SendMessage(pose.ToBinary());
+                    counter = 0;
+
                     var textureBuffer = new TextureBufferImpl(targetResolution.Width, targetResolution.Height, VideoFrame.TextureBufferType.Rgb, renderTextureId, new Android.Graphics.Matrix(), null, null, null);
                     var i420Buffer = yuvConverter.Convert(textureBuffer);
                     VideoFrameAvailable?.Invoke(this, i420Buffer);
                 }
-
             }
             catch (System.Exception ex)
             {

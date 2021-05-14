@@ -93,27 +93,6 @@ namespace VirtualStudio.ArCamera
             imageSource.Start();
         }
 
-        private void ImageSource_Texture2dAvailable(object sender, int textureId)
-        {
-            //textureHelper.Handler.Post(() =>
-            //{
-                var matrix = new Android.Graphics.Matrix();
-                matrix.PreTranslate(0.5f, 0.5f);
-                matrix.PreScale(-1f, -1f);
-                matrix.PreTranslate(-0.5f, -0.5f);
-                var buffer = new TextureBufferImpl(width, height, VideoFrame.TextureBufferType.Rgb, textureId, matrix, textureHelper.Handler, yuvConverter, null);
-                GLES20.GlBindTexture(GLES20.GlTexture2d, textureId);
-                GLES20.GlTexParameteri(GLES20.GlTexture2d, GLES20.GlTextureMinFilter, GLES20.GlNearest);
-                GLES20.GlTexParameteri(GLES20.GlTexture2d, GLES20.GlTextureMagFilter, GLES20.GlNearest);
-                // GLUtils.TexImage2D(GLES20.GlTexture2d, 0, CreateTestBitmap(width, height), 0);
-
-                long timestampNs = (DateTime.Now - startTime).Ticks * 100;
-                VideoFrame videoFrame = new VideoFrame(yuvConverter.Convert(buffer), 0, timestampNs);
-                capturerObserver.OnFrameCaptured(videoFrame);
-                videoFrame.Release();
-            // });
-        }
-
         private void ImageSource_VideoFrameAvailable(object sender, VideoFrame.II420Buffer buffer)
         {
             long timestampNs = (DateTime.Now - startTime).Ticks * 100;
@@ -147,63 +126,6 @@ namespace VirtualStudio.ArCamera
             imageSource.Stop();
             imageSource.ImageAvailable -= ImageSource_ImageAvailable;
             capturerObserver.OnCapturerStopped();
-        }
-
-        private static byte[] YUV_420_888toNV21(Image image)
-        {
-            byte[] nv21;
-            ByteBuffer yBuffer = image.GetPlanes()[0].Buffer;
-            ByteBuffer uBuffer = image.GetPlanes()[1].Buffer;
-            ByteBuffer vBuffer = image.GetPlanes()[2].Buffer;
-
-            int ySize = yBuffer.Remaining();
-            int vSize = vBuffer.Remaining();
-
-            nv21 = new byte[ySize + vSize + 1];
-
-            //U and V are swapped
-            yBuffer.Get(nv21, 0, ySize);
-            vBuffer.Get(nv21, ySize, vSize);
-            uBuffer.Get(nv21, ySize + vSize, 1);
-
-            return nv21;
-        }
-
-        private void BitmapSource_BitmapAvailable(object sender, Bitmap bitmap)
-        {
-            // testBitmap = CreateTestBitmap(bitmap.Width, bitmap.Height);
-            textureHelper.Handler.Post(() =>
-            {
-                GLES20.GlBindTexture(GLES20.GlTexture2d, textureId);
-                GLES20.GlTexParameteri(GLES20.GlTexture2d, GLES20.GlTextureMinFilter, GLES20.GlNearest);
-                GLES20.GlTexParameteri(GLES20.GlTexture2d, GLES20.GlTextureMagFilter, GLES20.GlNearest);
-                // GLUtils.TexImage2D(GLES20.GlTexture2d, 0, testBitmap, 0);
-                GLUtils.TexImage2D(GLES20.GlTexture2d, 0, bitmap, 0);
-
-                long timestampNs = (DateTime.Now - startTime).Ticks * 100;
-                VideoFrame videoFrame = new VideoFrame(buffer.ToI420(), 0, timestampNs);
-                capturerObserver.OnFrameCaptured(videoFrame);
-                videoFrame.Release();
-            });
-        }
-
-        private Bitmap CreateTestBitmap(int width, int height)
-        {
-            int pixelCount = width * height;
-            int[] colors = new int[pixelCount];
-            var random = new Random();
-            int r = random.Next(255);
-            int g = random.Next(255);
-            int b = random.Next(255);
-            for (int i = 0; i < pixelCount; i++)
-            {
-                colors[i] =
-                    (255 << 24) |   // A
-                    (r << 16) |     // R
-                    (g << 8) |    // G
-                    b;              // B
-            }
-            return Bitmap.CreateBitmap(colors, width, height, Bitmap.Config.Argb8888);
         }
 
         public void ChangeCaptureFormat(int p0, int p1, int p2)

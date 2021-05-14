@@ -42,29 +42,53 @@ namespace VirtualStudio.ArCamera
         private VideoTrack _localVideoTrack;
         private AudioTrack _localAudioTrack;
 
-        private readonly object _connectionLock = new object();
-        private PeerConnection _peerConnection;
-        private DataChannel _dataChannel;
+
+        private int incomingConnectionId;
+        private int outgoingConnectionId;
+        private readonly object _outgoingConnectionLock = new object();
+        private readonly object _incomingConnectionLock = new object();
+        private PeerConnection _incomingPeerConnection;
+        private PeerConnection _outgoingPeerConnection;
+        private DataChannel _outgoingDataChannel;
+        private DataChannel _incomingDataChannel;
         private int framebufferId;
         private int textureId;
 
 
-        private (PeerConnection peer, DataChannel data) _connection
+        private (PeerConnection peer, DataChannel data) _incomingConnection
         {
             get
             {
-                if (_peerConnection == null)
+                if (_incomingPeerConnection == null)
                 {
-                    lock (_connectionLock)
+                    lock (_incomingConnectionLock)
                     {
-                        if (_peerConnection == null)
+                        if (_incomingPeerConnection == null)
                         {
-                            _peerConnection = SetupPeerConnection();
+                            _incomingPeerConnection = SetupIncomingPeerConnection();
+                        }
+                    }
+                }
+                return (_incomingPeerConnection, _incomingDataChannel);
+            }
+        }
+
+        private (PeerConnection peer, DataChannel data) _outgoingConnection
+        {
+            get
+            {
+                if (_outgoingPeerConnection == null)
+                {
+                    lock (_outgoingConnectionLock)
+                    {
+                        if (_outgoingPeerConnection == null)
+                        {
+                            _outgoingPeerConnection = SetupOutgoingPeerConnection();
                         }
                     }
                 }
 
-                return (_peerConnection, _dataChannel);
+                return (_outgoingPeerConnection, _outgoingDataChannel);
             }
         }
 
@@ -105,7 +129,8 @@ namespace VirtualStudio.ArCamera
 
             MainThread.InvokeOnMainThreadAsync(() =>
             {
-                InitView(_localView);
+                if (_localView != null)
+                    InitView(_localView);
                 InitView(_remoteView);
             });
 
@@ -121,21 +146,23 @@ namespace VirtualStudio.ArCamera
             videoCapturer.StartCapture(640, 480, 30);
 
             _localVideoTrack = _peerConnectionFactory.CreateVideoTrack("video0", localVideoSource);
-            _localVideoTrack.AddSink(_localView);
+            if (_localView != null)
+                _localVideoTrack.AddSink(_localView);
 
             var localAudioSource = _peerConnectionFactory.CreateAudioSource(new MediaConstraints());
-            _localAudioTrack = _peerConnectionFactory.CreateAudioTrack("audio0", localAudioSource);    
+            _localAudioTrack = _peerConnectionFactory.CreateAudioTrack("audio0", localAudioSource);
         }
 
 
-        public void Connect(Action<SessionDescription, string> completionHandler)
+        public void Connect(int connectionId, Action<SessionDescription, string> completionHandler)
         {
-            _dataChannel = SetupDataChannel();
+            outgoingConnectionId = connectionId;
+            _outgoingDataChannel = SetupOutgoingDataChannel();
 
             var mediaConstraints = new MediaConstraints();
-            _connection.peer.CreateOffer(SdpObserver.OnCreateSuccess((sdp) =>
+            _outgoingConnection.peer.CreateOffer(SdpObserver.OnCreateSuccess((sdp) =>
             {
-                _connection.peer.SetLocalDescription(
+                _outgoingConnection.peer.SetLocalDescription(
                     SdpObserver.OnSet(() =>
                     {
                         completionHandler(sdp, string.Empty);
@@ -149,41 +176,58 @@ namespace VirtualStudio.ArCamera
             }), mediaConstraints);
         }
 
-        public void Disconnect()
+        public void Disconnect(int connectionId)
         {
-            if (_peerConnection != null)
+            if (connectionId == incomingConnectionId)
+            {
+                Disconnect(_incomingPeerConnection, _incomingDataChannel);
+                _incomingPeerConnection = null;
+                _incomingDataChannel = null;
+                incomingConnectionId = 0;
+            }
+            else if (connectionId == outgoingConnectionId)
+            {
+                Disconnect(_outgoingPeerConnection, _outgoingDataChannel);
+                _outgoingPeerConnection = null;
+                _outgoingDataChannel = null;
+                outgoingConnectionId = 0;
+            }
+        }
+
+        private void Disconnect(PeerConnection peerConnection, DataChannel dataChannel)
+        {
+            if (peerConnection != null)
             {
                 // https://bugs.chromium.org/p/webrtc/issues/detail?id=6924
                 Task.Run(() =>
                 {
-                    lock (_peerConnection)
+                    lock (peerConnection)
                     {
-                        if (_peerConnection != null)
+                        if (peerConnection != null)
                         {
-                            _dataChannel?.Close();
-                            _peerConnection?.Close();
+                            dataChannel?.Close();
+                            peerConnection?.Close();
 
-                            _dataChannel?.Dispose();
-                            _peerConnection?.Dispose();
-
-                            _dataChannel = null;
-                            _peerConnection = null;
+                            dataChannel?.Dispose();
+                            peerConnection?.Dispose();
                         }
                     }
                 });
             }
         }
 
-        public void ReceiveOffer(SessionDescription offerSdp, Action<SessionDescription, string> completionHandler)
+        public void ReceiveOffer(int connectionId, SessionDescription offerSdp, Action<SessionDescription, string> completionHandler)
         {
-            _connection.peer.SetRemoteDescription(
+            incomingConnectionId = connectionId;
+
+            _incomingConnection.peer.SetRemoteDescription(
                 SdpObserver.OnSet(() =>
                 {
                     var mediaConstraints = new MediaConstraints();
-                    _connection.peer.CreateAnswer(
+                    _incomingConnection.peer.CreateAnswer(
                         SdpObserver.OnCreate((answerSdp) =>
                         {
-                            _connection.peer.SetLocalDescription(SdpObserver.OnSet(() =>
+                            _incomingConnection.peer.SetLocalDescription(SdpObserver.OnSet(() =>
                             {
                                 completionHandler(answerSdp, string.Empty);
                             },
@@ -206,9 +250,12 @@ namespace VirtualStudio.ArCamera
                 offerSdp);
         }
 
-        public void ReceiveAnswer(SessionDescription answerSdp, Action<SessionDescription, string> completionHandler)
+        public void ReceiveAnswer(int connectionId, SessionDescription answerSdp, Action<SessionDescription, string> completionHandler)
         {
-            _connection.peer.SetRemoteDescription(
+            if (connectionId != outgoingConnectionId)
+                throw new System.Exception();
+
+            _outgoingConnection.peer.SetRemoteDescription(
                 SdpObserver.OnSet(() =>
                 {
                     completionHandler(answerSdp, string.Empty);
@@ -222,20 +269,38 @@ namespace VirtualStudio.ArCamera
 
         public bool SendMessage(string message)
         {
-            if (_connection.data != null && _connection.data.InvokeState() == DataChannel.State.Open)
+            if (_outgoingConnection.data != null && _outgoingConnection.data.InvokeState() == DataChannel.State.Open)
             {
                 var bytes = Encoding.UTF8.GetBytes(message);
-                var buffer = new DataChannel.Buffer(Java.Nio.ByteBuffer.Wrap(bytes), false);
-                var result = _connection.data.Send(buffer);
-                return result;
+                return SendBytes(bytes);
             }
 
             return false;
         }
 
-        public void ReceiveCandidate(IceCandidate candidate)
+        public bool SendMessage(byte[] message)
         {
-            _connection.peer.AddIceCandidate(candidate);
+            if (_outgoingConnection.data != null && _outgoingConnection.data.InvokeState() == DataChannel.State.Open)
+            {
+                return SendBytes(message);
+            }
+
+            return false;
+        }
+
+        private bool SendBytes(byte[] bytes)
+        {
+            var buffer = new DataChannel.Buffer(Java.Nio.ByteBuffer.Wrap(bytes), true);
+            var result = _outgoingConnection.data.Send(buffer);
+            return result;
+        }
+
+        public void ReceiveCandidate(int connectionId, IceCandidate candidate)
+        {
+            if (connectionId == incomingConnectionId)
+                _incomingConnection.peer.AddIceCandidate(candidate);
+            else if (connectionId == outgoingConnectionId)
+                _outgoingConnection.peer.AddIceCandidate(candidate);
         }
 
         private void InitView(SurfaceViewRenderer view)
@@ -245,13 +310,11 @@ namespace VirtualStudio.ArCamera
             view.Init(_eglBase.EglBaseContext, null);
         }
 
-        private PeerConnection SetupPeerConnection()
+        private PeerConnection SetupOutgoingPeerConnection()
         {
             var rtcConfig = new PeerConnection.RTCConfiguration(_iceServers);
 
-            var pc = _peerConnectionFactory.CreatePeerConnection(
-                rtcConfig,
-                this);
+            var pc = _peerConnectionFactory.CreatePeerConnection(rtcConfig, this);
 
             pc.AddTrack(_localVideoTrack, new[] { "stream0" });
             pc.AddTrack(_localAudioTrack, new[] { "stream0" });
@@ -259,14 +322,24 @@ namespace VirtualStudio.ArCamera
             return pc;
         }
 
-        private DataChannel SetupDataChannel()
+
+        private PeerConnection SetupIncomingPeerConnection()
+        {
+            var rtcConfig = new PeerConnection.RTCConfiguration(_iceServers);
+
+            var pc = _peerConnectionFactory.CreatePeerConnection(rtcConfig, this);
+
+            return pc;
+        }
+
+        private DataChannel SetupOutgoingDataChannel()
         {
             var init = new DataChannel.Init()
             {
                 Id = 1
             };
 
-            var dc = _connection.peer.CreateDataChannel("dataChannel", init);
+            var dc = _outgoingConnection.peer.CreateDataChannel("dataChannel", init);
             dc.RegisterObserver(this);
 
             return dc;
@@ -296,8 +369,8 @@ namespace VirtualStudio.ArCamera
 
             MainThread.BeginInvokeOnMainThread(() => _observer?.OnOpenDataChannel());
 
-            _dataChannel = p0;
-            _dataChannel.RegisterObserver(this);
+            _incomingDataChannel = p0;
+            _incomingDataChannel.RegisterObserver(this);
         }
 
         public void OnIceCandidate(IceCandidate p0)
@@ -325,15 +398,13 @@ namespace VirtualStudio.ArCamera
                     MainThread.BeginInvokeOnMainThread(() => _observer?.OnConnectWebRtc());
                 }
             }
-            else if (_isConnected)
-            {
-                if (_isConnected)
-                {
-                    _isConnected = false;
-                    Disconnect();
-                    MainThread.BeginInvokeOnMainThread(() => _observer?.OnDisconnectWebRtc());
-                }
-            }
+            //else if (_isConnected)
+            //{
+            //    _isConnected = false;
+            //    Disconnect(_incomingPeerConnection, _incomingDataChannel);
+            //    Disconnect(_outgoingPeerConnection, _outgoingDataChannel);
+            //    MainThread.BeginInvokeOnMainThread(() => _observer?.OnDisconnectWebRtc());
+            //}
 
             MainThread.BeginInvokeOnMainThread(() => _observer?.OnIceConnectionStateChanged(p0));
         }
@@ -367,7 +438,7 @@ namespace VirtualStudio.ArCamera
         #region DataChannelObserver
         public void OnBufferedAmountChange(long p0)
         {
-            System.Diagnostics.Debug.WriteLine($"{nameof(OnBufferedAmountChange)}");
+            System.Diagnostics.Debug.WriteLine($"{nameof(OnBufferedAmountChange)} {_outgoingConnection.data.BufferedAmount()}");
         }
 
         public void OnMessage(DataChannel.Buffer p0)
@@ -390,7 +461,8 @@ namespace VirtualStudio.ArCamera
 
         public void OnStateChange()
         {
-            System.Diagnostics.Debug.WriteLine($"{nameof(OnStateChange)}");
+            var state = _outgoingConnection.data?.InvokeState();
+            System.Diagnostics.Debug.WriteLine($"{nameof(OnStateChange)} {state?.ToString()}");
         }
         #endregion
     }
