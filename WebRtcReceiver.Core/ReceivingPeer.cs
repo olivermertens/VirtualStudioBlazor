@@ -67,10 +67,9 @@ namespace WebRtcReceiver.Core
                 if(ExtractTimestampFromFrame)
                 {
                     frameLength -= 4;
-                    timestampMs = BitConverter.ToUInt32(frame, frameLength);
-                    timestamp = new DateTime(timestampMs * 1000).ToString("dd.MM.yyyy HH:mm:ss,ffff");
+                    timestampMs = (uint)(frame[frameLength] << 24 | frame[frameLength + 1] << 16 | frame[frameLength + 2] << 8 | frame[frameLength + 3]);
+                    timestamp = new DateTime(timestampMs * 10000, DateTimeKind.Utc).ToString("dd.MM.yyyy HH:mm:ss,ffff");
                 }
-                else
                 Console.WriteLine($"On frame received: byte[{frame.Length}], rtpTs: {rtpTimestamp} extractedTs: {timestamp})");
                 _listener.OnFrameReceived(this, new Memory<byte>(frame, 0, frameLength), rtpTimestampMs, timestampMs);
             };

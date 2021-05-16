@@ -65,6 +65,7 @@ namespace WebRtcReceiver.App
                     break;
             }
         }
+
         public void OnFrameReceived(ReceivingPeer peer, Memory<byte> frame, uint rtpTimestamp, uint timestamp)
         {
             _outputStream.Write(frame.Span);
