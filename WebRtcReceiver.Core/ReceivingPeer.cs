@@ -13,7 +13,7 @@ namespace WebRtcReceiver.Core
 {
     public interface IReceivingPeerListener
     {
-        void OnFrameReceived(ReceivingPeer peer, byte[] frame, uint timestamp);
+        void OnFrameReceived(ReceivingPeer peer, Memory<byte> frame, uint rtpTimestamp, uint timestamp);
         void OnConnectionStateChanged(ReceivingPeer peer, RTCPeerConnectionState connectionState);
         void OnIceCandidate(ReceivingPeer peer, RTCIceCandidate iceCandidate);
     }
@@ -23,6 +23,7 @@ namespace WebRtcReceiver.Core
         private const int H264_SUGGESTED_FORMAT_ID = 100;
 
         public int ConnectionId { get; private set; }
+        public bool ExtractTimestampFromFrame { get; set; }
 
         private RTCPeerConnection _peerConnection;
 
@@ -57,10 +58,21 @@ namespace WebRtcReceiver.Core
             // pc.OnVideoFrameReceived += _videoSink.GotVideoFrame;
             // pc.OnVideoFormatsNegotiated += (formats) => _videoSink.SetVideoSinkFormat(formats.First());
 
-            pc.OnVideoFrameReceived += (endpoint, timestamp, frame, format) =>
+            pc.OnVideoFrameReceived += (endpoint, rtpTimestampMs, frame, format) =>
             {
-                Console.WriteLine($"On frame received: byte[{frame.Length}], ts {timestamp}");
-                _listener.OnFrameReceived(this, frame, timestamp);
+                int frameLength = frame.Length;
+                string rtpTimestamp = new DateTime(rtpTimestampMs * 100).ToString("dd.MM.yyyy HH:mm:ss,ffff");
+                string timestamp = "none";
+                uint timestampMs = 0;
+                if(ExtractTimestampFromFrame)
+                {
+                    frameLength -= 4;
+                    timestampMs = BitConverter.ToUInt32(frame, frameLength);
+                    timestamp = new DateTime(timestampMs * 1000).ToString("dd.MM.yyyy HH:mm:ss,ffff");
+                }
+                else
+                Console.WriteLine($"On frame received: byte[{frame.Length}], rtpTs: {rtpTimestamp} extractedTs: {timestamp})");
+                _listener.OnFrameReceived(this, new Memory<byte>(frame, 0, frameLength), rtpTimestampMs, timestampMs);
             };
 
             pc.onicecandidate += (iceCandidate) =>

@@ -65,10 +65,9 @@ namespace WebRtcReceiver.App
                     break;
             }
         }
-
-        public void OnFrameReceived(ReceivingPeer peer, byte[] frame, uint timestamp)
+        public void OnFrameReceived(ReceivingPeer peer, Memory<byte> frame, uint rtpTimestamp, uint timestamp)
         {
-            _outputStream.Write(frame);
+            _outputStream.Write(frame.Span);
         }
 
         public void OnIceCandidate(ReceivingPeer peer, RTCIceCandidate iceCandidate)
@@ -96,11 +95,14 @@ namespace WebRtcReceiver.App
         public async Task RequestSdpAnswer(SdpAnswerRequestArgs args)
         {
             var answer = _peer.GetSdpAnswer(args);
+            bool useInsetableStreams = args.RemotePeerSupportsInsertableStreams;
+            _peer.ExtractTimestampFromFrame = useInsetableStreams;
+
             await _connection.SendSdpAnswer(new SdpAnswerResponseArgs
             {
                 ConnectionId = _peer.ConnectionId,
                 SdpAnswer = answer.sdp,
-                UseInsertableStreams = false
+                UseInsertableStreams = useInsetableStreams
             });
         }
 
