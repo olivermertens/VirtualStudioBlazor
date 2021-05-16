@@ -120,21 +120,21 @@ class WebRtcHandler {
             console.log('Creating sdp offer failed', ex);
         }
     }
-    appendUint8ValueToFrame(chunk, value) {
+    appendUint64ValueToFrame(chunk, value) {
         const frameLength = chunk.data.byteLength;
-        const metadataLength = 4;
+        const metadataLength = 8;
         const dataBuffer = new ArrayBuffer(frameLength + metadataLength);
         const dataArray = new Uint8Array(dataBuffer);
         dataArray.set(new Uint8Array(chunk.data), 0);
         const dataView = new DataView(dataBuffer);
-        dataView.setUint32(frameLength, value);
+        dataView.setBigUint64(frameLength, BigInt(value));
         chunk.data = dataBuffer;
     }
-    separateUint8ValueFromFrame(chunk) {
+    separateUint64ValueFromFrame(chunk) {
         const view = new DataView(chunk.data);
-        const frameLength = chunk.data.byteLength - 4;
+        const frameLength = chunk.data.byteLength - 8;
         chunk.data = chunk.data.slice(0, frameLength);
-        return view.getUint32(frameLength);
+        return Number(view.getBigUint64(frameLength));
     }
     async getSdpAnswer(connectionId, sdpOffer, remotePeerSupportsInsertableStreams, videoElement, rtpTimestampParagraph, objRef) {
         if (this.videoInRtcPeerConnection != null) {
@@ -165,7 +165,7 @@ class WebRtcHandler {
                 try {
                     let receiverTransformStream = new TransformStream({
                         transform: (chunk, controller) => {
-                            var time = this.separateUint8ValueFromFrame(chunk);
+                            var time = this.separateUint64ValueFromFrame(chunk);
                             rtpTimestampParagraph.innerText = "Time: " + time;
                             controller.enqueue(chunk);
                         }
@@ -233,7 +233,7 @@ class WebRtcHandler {
                 let senderTransformStream = new TransformStream({
                     transform: (chunk, controller) => {
                         if (useInsertableStreams) {
-                            this.appendUint8ValueToFrame(chunk, Date.now());
+                            this.appendUint64ValueToFrame(chunk, Date.now());
                         }
                         controller.enqueue(chunk);
                     }

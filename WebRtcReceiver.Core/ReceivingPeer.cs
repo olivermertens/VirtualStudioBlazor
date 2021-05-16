@@ -13,7 +13,7 @@ namespace WebRtcReceiver.Core
 {
     public interface IReceivingPeerListener
     {
-        void OnFrameReceived(ReceivingPeer peer, Memory<byte> frame, uint rtpTimestamp, uint timestamp);
+        void OnFrameReceived(ReceivingPeer peer, Memory<byte> frame, uint rtpTimestamp, long timestamp);
         void OnConnectionStateChanged(ReceivingPeer peer, RTCPeerConnectionState connectionState);
         void OnIceCandidate(ReceivingPeer peer, RTCIceCandidate iceCandidate);
     }
@@ -63,12 +63,15 @@ namespace WebRtcReceiver.Core
                 int frameLength = frame.Length;
                 string rtpTimestamp = new DateTime(rtpTimestampMs * 100).ToString("dd.MM.yyyy HH:mm:ss,ffff");
                 string timestamp = "none";
-                uint timestampMs = 0;
+                long timestampMs = 0;
                 if(ExtractTimestampFromFrame)
                 {
-                    frameLength -= 4;
-                    timestampMs = (uint)(frame[frameLength] << 24 | frame[frameLength + 1] << 16 | frame[frameLength + 2] << 8 | frame[frameLength + 3]);
-                    timestamp = new DateTime(timestampMs * 10000, DateTimeKind.Utc).ToString("dd.MM.yyyy HH:mm:ss,ffff");
+                    frameLength -= 8;
+                    var span = new Span<byte>(frame, frameLength, 8);
+                    span.Reverse();
+                    timestampMs = BitConverter.ToInt64(span);
+                    if(timestampMs > 0 && timestampMs < 4398046511104)
+                        timestamp = DateTime.UnixEpoch.AddMilliseconds(timestampMs).ToString("dd.MM.yyyy HH:mm:ss,ffff");
                 }
                 Console.WriteLine($"On frame received: byte[{frame.Length}], rtpTs: {rtpTimestamp} extractedTs: {timestamp})");
                 _listener.OnFrameReceived(this, new Memory<byte>(frame, 0, frameLength), rtpTimestampMs, timestampMs);
